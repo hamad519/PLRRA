@@ -1,0 +1,8 @@
+IRON_SESSION_SECRET="JBQW23LBMQ======"
+MONGODB_URI="mongodb://localhost:27017/plra"
+GROQ_API_KEY=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
+GEMINI_API_KEY="AIzaSyAt_K8dTMiL_rouJhr4FcODOerfaSzGRKg"
+node_modules
+.next
+.env.local
+.dyad
