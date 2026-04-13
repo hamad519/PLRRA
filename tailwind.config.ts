@@ -108,19 +108,25 @@ export default {
   				}
   			},
             'news-scroll': {
-                '0%': { transform: 'translateX(100%)' },
+                '0%': { transform: 'translateX(100vw)' },
                 '100%': { transform: 'translateX(-100%)' },
             },
             'float': {
                 '0%, 100%': { transform: 'translateY(0)' },
                 '50%': { transform: 'translateY(-10px)' },
-            }
+            },
+            'nav-slide-down': {
+                '0%':   { transform: 'translateY(-6px)' },
+                '60%':  { transform: 'translateY(2px)'  },
+                '100%': { transform: 'translateY(0)'    },
+            },
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-            'news-scroll': 'news-scroll 30s linear infinite',
+            'news-scroll': 'news-scroll 80s linear infinite',
             'float': 'float 3s ease-in-out infinite',
+            'nav-slide-down': 'nav-slide-down 0.4s ease-out forwards',
   		}
   	}
   },

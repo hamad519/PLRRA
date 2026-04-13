@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout, Rss } from 'lucide-react';
 
 export const ADMIN_NAV_LINKS = [
   {
@@ -50,6 +50,15 @@ export const ADMIN_NAV_LINKS = [
     submenus: [
       { name: "Add New Record", href: "/admin/records/add" },
       { name: "Manage Records", href: "/admin/records/manage" },
+    ]
+  },
+  {
+    name: "Latest News",
+    href: "/admin/latest-news",
+    icon: Rss,
+    submenus: [
+      { name: "Add News Item", href: "/admin/latest-news/add" },
+      { name: "Manage News", href: "/admin/latest-news/manage" },
     ]
   },
   {

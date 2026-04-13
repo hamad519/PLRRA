@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { NAV_LINKS } from '@/lib/constants';
@@ -12,12 +12,32 @@ import { RootState } from '@/store/store';
 import { toggleMobileMenu, setMobileMenuOpen } from '@/store/features/navigationSlice';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export const Header = () => {
   const dispatch = useDispatch();
   const isMobileMenuOpen = useSelector((state: RootState) => state.navigation.isMobileMenuOpen);
   const isMobile = useIsMobile();
   const [dynamicLinks, setDynamicLinks] = useState<{ records: any[], pressReleases: any[] }>({ records: [], pressReleases: [] });
+  const [isScrolled, setIsScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    let wasScrolled = false;
+    const handleScroll = () => {
+      const nowScrolled = window.scrollY > 40;
+      if (nowScrolled && !wasScrolled && headerRef.current) {
+        // Re-trigger slide-down animation each time header becomes sticky
+        headerRef.current.classList.remove('animate-nav-slide-down');
+        void headerRef.current.offsetWidth; // force reflow
+        headerRef.current.classList.add('animate-nav-slide-down');
+      }
+      wasScrolled = nowScrolled;
+      setIsScrolled(nowScrolled);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchNavData = async () => {
@@ -124,7 +144,15 @@ export const Header = () => {
   };
 
   return (
-    <header className="bg-slate-950/95 backdrop-blur-xl text-plra-white sticky top-0 z-50 shadow-2xl border-b border-white/10">
+    <header
+      ref={headerRef}
+      className={cn(
+        "text-plra-white sticky top-0 z-50 border-b transition-colors duration-500",
+        isScrolled
+          ? "bg-gray-900/70 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] border-white/15"
+          : "bg-slate-950/95 backdrop-blur-xl shadow-2xl border-white/10"
+      )}
+    >
       <div className="container mx-auto flex items-center justify-between py-3 px-4 md:px-8">
         <Link href="/" className="flex items-center group">
           <div className="relative w-[50px] h-[50px] transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">

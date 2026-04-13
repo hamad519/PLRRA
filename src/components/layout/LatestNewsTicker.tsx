@@ -1,32 +1,56 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { LATEST_NEWS_ITEMS } from '@/lib/constants';
-import { Dot } from 'lucide-react';
 
 export const LatestNewsTicker = () => {
+  const [newsItems, setNewsItems] = useState<string[]>(LATEST_NEWS_ITEMS);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const res = await fetch('/api/latest-news');
+        const data = await res.json();
+        if (data.success && data.data.length > 0) {
+          setNewsItems(data.data.map((item: { title: string }) => item.title));
+        }
+      } catch {
+        // fallback to static items already set as default state
+      }
+    };
+    fetchNews();
+  }, []);
+
   return (
-    <div className="bg-slate-950 text-plra-white text-xs py-2.5 overflow-hidden relative border-b border-white/5">
-      <div className="flex items-center h-full">
-        <div className="bg-plra-gold text-slate-950 font-black px-4 py-1 skew-x-[-12deg] ml-4 z-10 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
-          <span className="inline-block skew-x-[12deg] text-[10px] uppercase tracking-tighter">Latest News</span>
-        </div>
-        <div className="relative flex-grow overflow-hidden h-full flex items-center">
-          <div className="whitespace-nowrap absolute left-0 animate-news-scroll flex items-center">
-            {LATEST_NEWS_ITEMS.map((news, index) => (
-              <React.Fragment key={index}>
-                <span className="px-6 font-medium text-gray-300 hover:text-plra-gold transition-colors cursor-default">{news}</span>
-                <Dot className="inline-block h-4 w-4 text-plra-accent-purple" />
-              </React.Fragment>
-            ))}
-            {/* Duplicate items to ensure continuous scroll */}
-            {LATEST_NEWS_ITEMS.map((news, index) => (
-              <React.Fragment key={`duplicate-${index}`}>
-                <span className="px-6 font-medium text-gray-300 hover:text-plra-gold transition-colors cursor-default">{news}</span>
-                {index < LATEST_NEWS_ITEMS.length - 1 && <Dot className="inline-block h-4 w-4 text-plra-accent-purple" />}
-              </React.Fragment>
-            ))}
-          </div>
+    <div className="bg-[#0a0a0a] border-b border-plra-gold/30 overflow-hidden flex items-center h-9">
+      {/* Label */}
+      <div className="shrink-0 flex items-center self-stretch bg-plra-gold px-4 z-10">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-950 whitespace-nowrap">
+          Latest News
+        </span>
+      </div>
+
+      {/* Divider arrow */}
+      <div
+        className="shrink-0 w-0 h-0 z-10"
+        style={{
+          borderTop: '18px solid transparent',
+          borderBottom: '18px solid transparent',
+          borderLeft: '12px solid #f59e0b',
+        }}
+      />
+
+      {/* Scrolling track */}
+      <div className="relative flex-1 overflow-hidden h-full flex items-center">
+        <div className="inline-flex items-center animate-news-scroll whitespace-nowrap">
+          {newsItems.map((news, index) => (
+            <span key={index} className="inline-flex items-center px-6">
+              <span className="text-plra-gold mr-2 text-xs select-none">◆</span>
+              <span className="text-[11px] font-semibold text-gray-200 tracking-wide">
+                {news}
+              </span>
+            </span>
+          ))}
         </div>
       </div>
     </div>

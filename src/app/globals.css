@@ -82,12 +82,11 @@
   * {
     @apply border-border;
   }
-  html, body {
-    @apply overflow-x-hidden;
+  html {
     width: 100%;
-    position: relative;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply overflow-x-hidden bg-background text-foreground;
+    width: 100%;
   }
 }
