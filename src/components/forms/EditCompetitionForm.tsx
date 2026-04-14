@@ -17,12 +17,10 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { CalendarIcon, Upload, XCircle } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Upload, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
 import Image from 'next/image';
+import { AdminDatePicker } from '@/components/ui/AdminDatePicker';
 import { useRouter } from 'next/navigation';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -44,14 +42,12 @@ const multipleFilesSchema = z.array(z.any())
 
 const formSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
-  date: z.date({
-    required_error: "Competition date is required.",
-  }),
+  fromDate: z.date({ required_error: "From date is required." }),
+  toDate: z.date({ required_error: "To date is required." }),
   location: z.string().min(3, { message: "Location must be at least 3 characters." }),
-  mainImage: fileSchema, // For new main image upload
-  galleryImages: multipleFilesSchema, // For new gallery images upload
+  mainImage: fileSchema,
+  galleryImages: multipleFilesSchema,
   description: z.string().optional(),
-  // Existing images (Base64 strings) will be handled separately in state
 });
 
 interface EditCompetitionFormProps {
@@ -83,11 +79,12 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
           const competition = data.data;
           form.reset({
             title: competition.title,
-            date: new Date(competition.date),
+            fromDate: new Date(competition.fromDate || competition.date),
+            toDate: new Date(competition.toDate || competition.date),
             location: competition.location,
             description: competition.description,
-            mainImage: undefined, // Clear file input for new upload
-            galleryImages: undefined, // Clear file input for new upload
+            mainImage: undefined,
+            galleryImages: undefined,
           });
           setInitialMainImageBase64(competition.mainImageBase64 || null);
           setMainImagePreview(competition.mainImageBase64 || null);
@@ -176,7 +173,8 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
 
       const payload = {
         title: values.title,
-        date: values.date.toISOString(),
+        fromDate: values.fromDate.toISOString(),
+        toDate: values.toDate.toISOString(),
         location: values.location,
         description: values.description,
         mainImageBase64: finalMainImageBase64,
@@ -237,45 +235,42 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className="text-admin-text-primary text-lg">Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal bg-admin-input-bg border-admin-input-border text-admin-text-primary hover:bg-admin-hover-bg hover:text-admin-text-primary",
-                            !field.value && "text-admin-text-secondary"
-                          )}
-                        >
-                          <span className="flex items-center">
-                            <CalendarIcon className="mr-2 h-4 w-4 text-admin-accent" />
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                          </span>
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-admin-card-bg border-admin-border" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        captionLayout="dropdown" // Added this prop for year/month dropdowns
-                        fromYear={new Date().getFullYear() - 10} // Example: allow selecting up to 10 years in the past
-                        toYear={new Date().getFullYear() + 10} // Example: allow selecting up to 10 years in the future
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="fromDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="text-admin-text-primary text-lg">From Date</FormLabel>
+                    <FormControl>
+                      <AdminDatePicker
+                        value={field.value}
+                        onChange={(date) => field.onChange(date)}
+                        placeholder="From date"
                       />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="toDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="text-admin-text-primary text-lg">To Date</FormLabel>
+                    <FormControl>
+                      <AdminDatePicker
+                        value={field.value}
+                        onChange={(date) => field.onChange(date)}
+                        placeholder="To date"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="location"

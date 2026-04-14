@@ -17,12 +17,11 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { CalendarIcon, Upload, XCircle } from 'lucide-react'; // Added XCircle
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Upload, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import Image from 'next/image'; // Import Image component
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { AdminDatePicker } from '@/components/ui/AdminDatePicker';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -44,16 +43,16 @@ const multipleFilesSchema = z.array(z.any())
 
 const formSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
-  date: z.date({
-    required_error: "Competition date is required.",
-  }),
+  fromDate: z.date({ required_error: "From date is required." }),
+  toDate: z.date({ required_error: "To date is required." }),
   location: z.string().min(3, { message: "Location must be at least 3 characters." }),
-  mainImage: fileSchema, // Now required
-  galleryImages: multipleFilesSchema, // New field for gallery image files
+  mainImage: fileSchema,
+  galleryImages: multipleFilesSchema,
   description: z.string().optional(),
 });
 
 export const AddCompetitionForm = () => {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
   const [galleryImagePreviews, setGalleryImagePreviews] = useState<string[]>([]);
@@ -140,18 +139,17 @@ export const AddCompetitionForm = () => {
 
       const payload = {
         title: values.title,
-        date: values.date.toISOString(),
+        fromDate: values.fromDate.toISOString(),
+        toDate: values.toDate.toISOString(),
         location: values.location,
         description: values.description,
-        mainImageBase64: mainImageBase64,
+        mainImageBase64,
         galleryImagesBase64: galleryImagesBase64.length > 0 ? galleryImagesBase64 : undefined,
       };
 
       const res = await fetch('/api/admin/competitions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -162,6 +160,7 @@ export const AddCompetitionForm = () => {
         form.reset();
         setMainImagePreview(null);
         setGalleryImagePreviews([]);
+        router.push('/admin/competitions/manage');
       } else {
         toast.error(data.message || 'Failed to add competition.');
       }
@@ -199,45 +198,42 @@ export const AddCompetitionForm = () => {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className="text-admin-text-primary text-lg">Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal bg-admin-input-bg border-admin-input-border text-admin-text-primary hover:bg-admin-hover-bg hover:text-admin-text-primary",
-                            !field.value && "text-admin-text-secondary"
-                          )}
-                        >
-                          <span className="flex items-center">
-                            <CalendarIcon className="mr-2 h-4 w-4 text-admin-accent" />
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                          </span>
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-admin-card-bg border-admin-border" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        captionLayout="dropdown" // Added this prop for year/month dropdowns
-                        fromYear={new Date().getFullYear() - 10} // Example: allow selecting up to 10 years in the past
-                        toYear={new Date().getFullYear() + 10} // Example: allow selecting up to 10 years in the future
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="fromDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="text-admin-text-primary text-lg">From Date</FormLabel>
+                    <FormControl>
+                      <AdminDatePicker
+                        value={field.value}
+                        onChange={(date) => field.onChange(date)}
+                        placeholder="From date"
                       />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="toDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="text-admin-text-primary text-lg">To Date</FormLabel>
+                    <FormControl>
+                      <AdminDatePicker
+                        value={field.value}
+                        onChange={(date) => field.onChange(date)}
+                        placeholder="To date"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="location"
