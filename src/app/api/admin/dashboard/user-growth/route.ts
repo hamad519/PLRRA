@@ -1,48 +1,26 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import User from '@/models/User';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
-  await dbConnect();
-
   try {
-    const userGrowth = await User.aggregate([
-      {
-        $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $sort: { "_id.year": 1, "_id.month": 1 }
-      },
-      {
-        $project: {
-          _id: 0,
-          year: "$_id.year",
-          month: "$_id.month",
-          count: 1
-        }
-      }
-    ]);
+    // Raw SQL for monthly aggregation — cleaner than fetching all users
+    const rows = await prisma.$queryRaw<Array<{ year: number; month: number; count: bigint }>>`
+      SELECT YEAR(createdAt) as year, MONTH(createdAt) as month, COUNT(*) as count
+      FROM users
+      GROUP BY YEAR(createdAt), MONTH(createdAt)
+      ORDER BY year ASC, month ASC
+    `;
 
-    // Format data for the chart (e.g., cumulative count, month names)
-    const formattedData = userGrowth.map((item, index, arr) => {
-      const date = new Date(item.year, item.month - 1); // Month is 0-indexed for Date object
+    let cumulative = 0;
+    const formattedData = rows.map((row) => {
+      cumulative += Number(row.count);
+      const date = new Date(row.year, row.month - 1);
       const monthName = date.toLocaleString('default', { month: 'short' });
-      const cumulativeUsers = arr.slice(0, index + 1).reduce((sum, current) => sum + current.count, 0);
-      return {
-        name: monthName,
-        users: cumulativeUsers,
-      };
+      return { name: monthName, users: cumulative };
     });
 
     return NextResponse.json({ success: true, data: formattedData }, { status: 200 });
   } catch (error: any) {
-    console.error('Error fetching user growth data:', error);
     return NextResponse.json({ success: false, message: 'Failed to fetch user growth data', error: error.message }, { status: 500 });
   }
 }

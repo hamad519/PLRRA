@@ -1,6 +1,5 @@
 import React from 'react';
-import dbConnect from '@/lib/dbConnect';
-import Event from '@/models/Event';
+import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { CalendarDays, MapPin, Info } from 'lucide-react';
@@ -12,12 +11,11 @@ interface EventPageProps {
 }
 
 export default async function EventDetailPage({ params }: EventPageProps) {
-  await dbConnect();
   const { id } = await params;
 
   let event;
   try {
-    event = await Event.findById(id);
+    event = await prisma.event.findUnique({ where: { id } });
   } catch (e) {
     return notFound();
   }
@@ -90,7 +88,7 @@ export default async function EventDetailPage({ params }: EventPageProps) {
             </Reveal>
           </div>
           <div className="lg:col-span-8">
-            <EventRegistrationForm eventId={event._id.toString()} eventTitle={event.title} />
+            <EventRegistrationForm eventId={event.id} eventTitle={event.title} />
           </div>
         </div>
       </div>

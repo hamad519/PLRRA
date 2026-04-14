@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------- USER --------------------------
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      String   @default("user") // 'user' | 'admin'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// -------------------------- EVENT --------------------------
+model Event {
+  id              String   @id @default(uuid())
+  title           String
+  date            DateTime
+  location        String
+  mainImageBase64 String   @db.LongText
+  description     String   @default("") @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  registrations EventRegistration[]
+
+  @@map("events")
+}
+
+// -------------------------- COMPETITION --------------------------
+model Competition {
+  id                   String    @id @default(uuid())
+  title                String
+  fromDate             DateTime
+  toDate               DateTime
+  date                 DateTime?
+  location             String
+  mainImageBase64      String    @db.LongText
+  galleryImagesBase64  Json? // array of base64 strings
+  description          String    @default("") @db.Text
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@map("competitions")
+}
+
+// -------------------------- PRESS RELEASE --------------------------
+model PressRelease {
+  id        String   @id @default(uuid())
+  title     String
+  date      DateTime @default(now())
+  pdfBase64 String   @db.LongText
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("press_releases")
+}
+
+// -------------------------- NATIONAL RECORD --------------------------
+model NationalRecord {
+  id        String   @id @default(uuid())
+  year      Int
+  title     String
+  pdfBase64 String   @db.LongText
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("national_records")
+}
+
+// -------------------------- PAST RESULT RECORD --------------------------
+model PastResultRecord {
+  id        String   @id @default(uuid())
+  title     String
+  date      DateTime
+  location  String
+  matches   Json // [{ name, pdfBase64, details }]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("past_result_records")
+}
+
+// -------------------------- LATEST NEWS --------------------------
+model LatestNews {
+  id        String   @id @default(uuid())
+  title     String
+  date      DateTime @default(now())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("latest_news")
+}
+
+// -------------------------- EVENT REGISTRATION --------------------------
+model EventRegistration {
+  id                      String   @id @default(uuid())
+  eventId                 String
+  event                   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  firstName               String
+  lastName                String
+  fatherName              String
+  religion                String
+  dateOfBirth             DateTime
+  profession              String
+  addressLine1            String
+  city                    String
+  state                   String
+  phoneNo                 String
+  email                   String
+  cnicNo                  String
+  cnicCopyBase64          String   @db.LongText
+  passportNo              String?  @default("")
+  passportCopyBase64      String?  @db.LongText
+  weapons                 Json // [{ nomenclature, caliber, bodyNumber, madeBy }]
+  weaponLicenseCopyBase64 String   @db.LongText
+  bankChallanCopyBase64   String   @db.LongText
+  status                  String   @default("pending") // 'pending' | 'approved' | 'rejected'
+  submittedAt             DateTime @default(now())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([eventId])
+  @@map("event_registrations")
+}
+
+// -------------------------- MEMBERSHIP APPLICATION --------------------------
+model MembershipApplication {
+  id                      String   @id @default(uuid())
+  membershipPlan          String
+  firstName               String
+  lastName                String
+  fatherName              String
+  religion                String
+  dateOfBirth             DateTime
+  profession              String
+  addressLine1            String
+  city                    String
+  state                   String
+  jobBusinessAddress      String   @db.Text
+  presentHomeAddress      String   @db.Text
+  permanentHomeAddress    String   @db.Text
+  cnicNo                  String
+  cnicCopyBase64          String   @db.LongText
+  passportNo              String?  @default("")
+  passportCopyBase64      String?  @db.LongText
+  phoneNo                 String
+  email                   String
+  weapons                 Json // [{ nomenclature, caliber, bodyNumber, madeBy }]
+  weaponLicenseCopyBase64 String   @db.LongText
+  membershipFeeYear       String
+  bankChallanCopyBase64   String   @db.LongText
+  status                  String   @default("pending")
+  submittedAt             DateTime @default(now())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("membership_applications")
+}
+
+// -------------------------- SITE SETTINGS --------------------------
+// Single row table (singleton)
+model SiteSettings {
+  id                String   @id @default(uuid())
+  address           String   @default("Pakistan Long Range Rifle Association C/O Army Marksmanship Unit Jhelum Cantonment") @db.Text
+  contactNo         String   @default("0092-544-620081")
+  email             String   @default("plra.pakistan2022@gmail.com")
+  workingHours      String   @default("Monday to Friday: 7am – 7pm")
+  facebookLink      String   @default("https://facebook.com") @db.Text
+  instagramLink     String   @default("https://instagram.com") @db.Text
+  isMaintenanceMode Boolean  @default(false)
+  plraIntro         String   @default("") @db.Text
+  stats             Json? // { nationalRecords, internationalMedals, eliteShooters, growthRate }
+  championMoments   Json? // [{ title, imageBase64 }]
+  heroSlides        Json? // [{ title, subtitle, description, imageBase64 }]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("site_settings")
+}

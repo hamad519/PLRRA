@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import User from '@/models/User';
+import prisma from '@/lib/prisma';
 
-export async function GET(req: Request) {
-  await dbConnect();
-
+export async function GET() {
   try {
-    // The middleware should already handle authentication and role checking for /admin routes.
-    // If not, you would add explicit checks here.
-
-    const users = await User.find({}).select('-password'); // Fetch all users, exclude password field
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
     return NextResponse.json({ success: true, data: users }, { status: 200 });
   } catch (error: any) {
-    console.error('Error fetching users:', error);
     return NextResponse.json({ success: false, message: 'Failed to fetch users', error: error.message }, { status: 500 });
   }
 }

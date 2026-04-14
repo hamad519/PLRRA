@@ -1,9 +1,4 @@
-import dbConnect from './dbConnect';
-import Event from '@/models/Event';
-import NationalRecord from '@/models/NationalRecord';
-import PastResultRecord from '@/models/PastResultRecord';
-import PressRelease from '@/models/PressRelease';
-import SiteSettings from '@/models/SiteSettings';
+import prisma from './prisma';
 
 async function extractTextFromBase64(base64String: string): Promise<string> {
   if (!base64String || typeof base64String !== 'string') return '';
@@ -27,7 +22,6 @@ async function extractTextFromBase64(base64String: string): Promise<string> {
       }
     }
 
-    // Try PDF extraction for everything else (or as fallback)
     try {
       const { extractPdfText } = await import('./pdfExtractor');
       const text = await extractPdfText(buffer);
@@ -43,10 +37,6 @@ async function extractTextFromBase64(base64String: string): Promise<string> {
   }
 }
 
-/**
- * Detects what type of data the user is asking about
- * based on keywords in their query.
- */
 function detectQueryIntent(query: string) {
   const q = query.toLowerCase();
   return {
@@ -61,35 +51,25 @@ function detectQueryIntent(query: string) {
   };
 }
 
-/**
- * Builds the AI context string from the database.
- * - Always includes basic PLRA info and stats.
- * - Based on the user's query, fetches and extracts PDF text
- *   from National Records, Press Releases, and/or Past Results.
- */
 export async function getApplicationContext(userQuery: string = ''): Promise<string> {
   try {
-    await dbConnect();
-
     const intent = detectQueryIntent(userQuery);
-
-    // If query is empty/generic, show everything with PDF extraction
     const fetchAll = !userQuery.trim();
 
-    const settings = await SiteSettings.findOne().lean() as any;
+    const settings = (await prisma.siteSettings.findFirst()) as any;
+    const stats = (settings?.stats ?? {}) as Record<string, string>;
 
     let context = `Association Name: Pakistan Long Range Rifle Association (PLRA)
 About PLRA: ${settings?.plraIntro || 'The national governing body for Full-bore rifle shooting in Pakistan.'}
 
 Current Statistics:
-- National Records: ${settings?.stats?.nationalRecords || 'N/A'}
-- International Medals: ${settings?.stats?.internationalMedals || 'N/A'}
-- Elite Shooters: ${settings?.stats?.eliteShooters || 'N/A'}
+- National Records: ${stats.nationalRecords || 'N/A'}
+- International Medals: ${stats.internationalMedals || 'N/A'}
+- Elite Shooters: ${stats.eliteShooters || 'N/A'}
 `;
 
-    // ── Upcoming Events ──────────────────────────────────────────────
     if (fetchAll || intent.wantsEvents) {
-      const events = await Event.find({}).limit(5).lean() as any[];
+      const events = await prisma.event.findMany({ take: 5 });
       if (events.length > 0) {
         context += `\nUpcoming Events:\n`;
         for (const e of events) {
@@ -98,9 +78,8 @@ Current Statistics:
       }
     }
 
-    // ── National Records (with PDF extraction) ───────────────────────
     if (fetchAll || intent.wantsNationalRecords) {
-      const records = await NationalRecord.find({}).sort({ year: -1 }).limit(10).lean() as any[];
+      const records = await prisma.nationalRecord.findMany({ orderBy: { year: 'desc' }, take: 10 });
       if (records.length > 0) {
         context += `\n=== NATIONAL RECORDS ===\n`;
         for (const record of records) {
@@ -111,16 +90,14 @@ Current Statistics:
               context += `Document Content:\n${docText.substring(0, 3000)}\n`;
             } else {
               context += `(No readable text in PDF)\n`;
-              console.warn(`[ai-context] Could not extract text from record: ${record.title}`);
             }
           }
         }
       }
     }
 
-    // ── Press Releases (with PDF extraction) ─────────────────────────
     if (fetchAll || intent.wantsPressReleases) {
-      const pressReleases = await PressRelease.find({}).sort({ date: -1 }).limit(10).lean() as any[];
+      const pressReleases = await prisma.pressRelease.findMany({ orderBy: { date: 'desc' }, take: 10 });
       if (pressReleases.length > 0) {
         context += `\n=== PRESS RELEASES ===\n`;
         for (const pr of pressReleases) {
@@ -131,21 +108,20 @@ Current Statistics:
               context += `Document Content:\n${docText.substring(0, 3000)}\n`;
             } else {
               context += `(No readable text in PDF)\n`;
-              console.warn(`[ai-context] Could not extract text from press release: ${pr.title}`);
             }
           }
         }
       }
     }
 
-    // ── Past Competition Results (with PDF extraction) ────────────────
     if (fetchAll || intent.wantsPastResults) {
-      const pastResults = await PastResultRecord.find({}).sort({ date: -1 }).limit(5).lean() as any[];
+      const pastResults = await prisma.pastResultRecord.findMany({ orderBy: { date: 'desc' }, take: 5 });
       if (pastResults.length > 0) {
         context += `\n=== PAST COMPETITION RESULTS ===\n`;
         for (const result of pastResults) {
           context += `\n[Competition] ${result.title} — ${new Date(result.date).toDateString()}, ${result.location}\n`;
-          for (const match of result.matches || []) {
+          const matches = (result.matches ?? []) as any[];
+          for (const match of matches) {
             context += `  Match: ${match.name}\n`;
             if (match.pdfBase64) {
               const docText = await extractTextFromBase64(match.pdfBase64);

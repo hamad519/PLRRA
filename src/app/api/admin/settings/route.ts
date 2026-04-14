@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import SiteSettings from '@/models/SiteSettings';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
-  await dbConnect();
   try {
-    let settings = await SiteSettings.findOne();
+    let settings = await prisma.siteSettings.findFirst();
     if (!settings) {
-      settings = await SiteSettings.create({});
+      settings = await prisma.siteSettings.create({ data: {} });
     }
     return NextResponse.json({ success: true, data: settings });
   } catch (error: any) {
@@ -16,32 +14,27 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  await dbConnect();
   try {
     const body = await req.json();
-    let settings = await SiteSettings.findOne();
-    
-    if (settings) {
-      // Use findByIdAndUpdate with the body directly to update all fields provided
-      settings = await SiteSettings.findByIdAndUpdate(
-        settings._id, 
-        { $set: body }, 
-        { new: true, runValidators: true }
-      );
-    } else {
-      settings = await SiteSettings.create(body);
+
+    // Only whitelist SiteSettings fields
+    const data: any = {};
+    const fields = [
+      'address', 'contactNo', 'email', 'workingHours',
+      'facebookLink', 'instagramLink', 'isMaintenanceMode',
+      'plraIntro', 'stats', 'championMoments', 'heroSlides',
+    ];
+    for (const key of fields) {
+      if (body[key] !== undefined) data[key] = body[key];
     }
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Settings updated successfully', 
-      data: settings 
-    });
+
+    const existing = await prisma.siteSettings.findFirst();
+    const settings = existing
+      ? await prisma.siteSettings.update({ where: { id: existing.id }, data })
+      : await prisma.siteSettings.create({ data });
+
+    return NextResponse.json({ success: true, message: 'Settings updated successfully', data: settings });
   } catch (error: any) {
-    console.error("Settings Update Error:", error);
-    return NextResponse.json({ 
-      success: false, 
-      message: error.message 
-    }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

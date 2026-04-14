@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import NationalRecord from '@/models/NationalRecord';
-import PressRelease from '@/models/PressRelease';
+import prisma from '@/lib/prisma';
 
-// GET /api/test-pdf  — shows whether PDF extraction is working for stored records
-// Remove this route once confirmed working.
 export async function GET() {
   try {
-    await dbConnect();
-
     const { extractPdfText } = await import('@/lib/pdfExtractor');
 
-    const records = await NationalRecord.find({}).limit(3).lean() as any[];
+    const records = await prisma.nationalRecord.findMany({ take: 3 });
     const results: any[] = [];
 
     for (const r of records) {
@@ -36,7 +30,7 @@ export async function GET() {
       });
     }
 
-    const pressReleases = await PressRelease.find({}).limit(2).lean() as any[];
+    const pressReleases = await prisma.pressRelease.findMany({ take: 2 });
     const prResults: any[] = [];
     for (const pr of pressReleases) {
       let text = '';
