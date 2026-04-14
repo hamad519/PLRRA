@@ -2,10 +2,12 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICompetition extends Document {
   title: string;
-  date: Date;
+  fromDate: Date;
+  toDate: Date;
+  date?: Date; // kept for backward compat with existing documents
   location: string;
-  mainImageBase64: string; // Now required
-  galleryImagesBase64?: string[]; // New field for gallery images as Base64
+  mainImageBase64: string;
+  galleryImagesBase64?: string[];
   description?: string;
 }
 
@@ -15,9 +17,17 @@ const CompetitionSchema: Schema = new Schema({
     required: [true, 'Competition title is required.'],
     trim: true,
   },
+  fromDate: {
+    type: Date,
+    required: [true, 'From date is required.'],
+  },
+  toDate: {
+    type: Date,
+    required: [true, 'To date is required.'],
+  },
+  // kept for backward compat
   date: {
     type: Date,
-    required: [true, 'Competition date is required.'],
   },
   location: {
     type: String,
@@ -26,11 +36,11 @@ const CompetitionSchema: Schema = new Schema({
   },
   mainImageBase64: {
     type: String,
-    required: [true, 'Main image is required.'], // Now required
+    required: [true, 'Main image is required.'],
   },
   galleryImagesBase64: {
-    type: [String], // Array of strings
-    required: false, // Optional
+    type: [String],
+    required: false,
   },
   description: {
     type: String,
