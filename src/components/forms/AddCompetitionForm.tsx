@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { AdminDatePicker } from '@/components/ui/AdminDatePicker';
+import { uploadImage } from '@/lib/uploadImage';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -66,20 +67,28 @@ export const AddCompetitionForm = () => {
     },
   });
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  // For preview only (not sent to server) — quick base64 read
+  const fileToPreviewDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = (error) => reject(error);
     });
-  };
+
+  // Upload to /api/upload — returns public path like /uploads/competitions/xxx.jpg
+  const uploadCompetitionImage = (file: File, isMain = false): Promise<string> =>
+    uploadImage(file, {
+      folder: 'competitions',
+      maxSizeMB: isMain ? 0.5 : 0.25,
+      maxWidthOrHeight: isMain ? 1920 : 1280,
+    });
 
   const handleMainImageChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-      const base64 = await convertFileToBase64(file);
-      setMainImagePreview(base64);
+      const preview = await fileToPreviewDataUrl(file);
+      setMainImagePreview(preview);
       onChange(event.target.files);
     } else {
       setMainImagePreview(null);
@@ -90,8 +99,8 @@ export const AddCompetitionForm = () => {
   const handleGalleryImagesChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     if (event.target.files && event.target.files.length > 0) {
       const files = Array.from(event.target.files);
-      const base64Previews = await Promise.all(files.map(file => convertFileToBase64(file)));
-      setGalleryImagePreviews(prev => [...prev, ...base64Previews]); // Changed to append
+      const previews = await Promise.all(files.map(file => fileToPreviewDataUrl(file)));
+      setGalleryImagePreviews(prev => [...prev, ...previews]);
       onChange(files);
     } else {
       // If the user clears the file input, we don't want to clear existing gallery images
@@ -126,14 +135,16 @@ export const AddCompetitionForm = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const mainImageBase64 = values.mainImage && values.mainImage.length > 0 
-        ? await convertFileToBase64(values.mainImage[0]) 
+      // Upload main image — receive public URL path
+      const mainImageBase64 = values.mainImage && values.mainImage.length > 0
+        ? await uploadCompetitionImage(values.mainImage[0], true)
         : undefined;
 
+      // Upload each gallery image
       const galleryImagesBase64: string[] = [];
       if (values.galleryImages && values.galleryImages.length > 0) {
         for (const file of values.galleryImages) {
-          galleryImagesBase64.push(await convertFileToBase64(file));
+          galleryImagesBase64.push(await uploadCompetitionImage(file));
         }
       }
 

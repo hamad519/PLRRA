@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { uploadFile } from '@/lib/uploadFile';
 
 const ACCEPTED_FILE_TYPES = [
   "application/pdf",
@@ -44,19 +45,12 @@ export const AddPressReleaseForm = () => {
   const selectedFiles = form.watch("pdf");
   const fileName = selectedFiles?.[0]?.name;
 
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const pdfBase64 = await convertToBase64(values.pdf[0]);
+      // Upload the file first — returns a public URL like /uploads/press-releases/xxx.pdf
+      const pdfBase64 = await uploadFile(values.pdf[0], 'press-releases');
+
       const res = await fetch('/api/admin/press-releases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,9 +59,12 @@ export const AddPressReleaseForm = () => {
       if (res.ok) {
         toast.success("Press Release added!");
         router.push('/admin/press-releases/manage');
+      } else {
+        const data = await res.json();
+        toast.error(data.message || "Failed to add press release");
       }
-    } catch (error) {
-      toast.error("Failed to add press release");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add press release");
     } finally {
       setIsLoading(false);
     }

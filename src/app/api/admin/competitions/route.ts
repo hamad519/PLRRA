@@ -29,7 +29,21 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const competitions = await prisma.competition.findMany({ orderBy: { fromDate: 'desc' } });
+    const competitions = await prisma.competition.findMany({
+      select: {
+        id: true,
+        title: true,
+        fromDate: true,
+        toDate: true,
+        date: true,
+        location: true,
+        mainImageBase64: true, // still a small path string — keep for list thumbnails
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { fromDate: 'desc' },
+    });
     const data = competitions.map((c) => ({ ...c, _id: c.id }));
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: any) {

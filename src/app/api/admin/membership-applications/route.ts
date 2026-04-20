@@ -49,7 +49,22 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const applications = await prisma.membershipApplication.findMany({ orderBy: { submittedAt: 'desc' } });
+    const applications = await prisma.membershipApplication.findMany({
+      select: {
+        id: true,
+        membershipPlan: true,
+        firstName: true,
+        lastName: true,
+        fatherName: true,
+        email: true,
+        phoneNo: true,
+        cnicNo: true,
+        city: true,
+        status: true,
+        submittedAt: true,
+      },
+      orderBy: { submittedAt: 'desc' },
+    });
     const data = applications.map((a) => ({ ...a, _id: a.id }));
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: any) {

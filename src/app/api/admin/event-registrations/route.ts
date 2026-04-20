@@ -9,9 +9,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'Missing required registration fields' }, { status: 400 });
     }
 
+    const eventIdNum = Number(d.eventId);
+    if (!Number.isInteger(eventIdNum) || eventIdNum <= 0) {
+      return NextResponse.json({ message: 'Invalid event id' }, { status: 400 });
+    }
+
     const newRegistration = await prisma.eventRegistration.create({
       data: {
-        eventId: d.eventId,
+        eventId: eventIdNum,
         firstName: d.firstName,
         lastName: d.lastName,
         fatherName: d.fatherName,
@@ -45,12 +50,24 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
+    // Only fetch fields needed by the list table — document fields are loaded
+    // lazily in the detail page, keeping this response fast even with 1000s of rows.
     const registrations = await prisma.eventRegistration.findMany({
-      include: { event: { select: { title: true } } },
+      select: {
+        id: true,
+        eventId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phoneNo: true,
+        cnicNo: true,
+        status: true,
+        submittedAt: true,
+        event: { select: { title: true } },
+      },
       orderBy: { submittedAt: 'desc' },
     });
 
-    // Match the old shape: { eventId: { _id, title } } to keep frontend working
     const formatted = registrations.map((r) => ({
       ...r,
       _id: r.id,

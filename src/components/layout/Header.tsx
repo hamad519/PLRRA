@@ -12,6 +12,7 @@ import { RootState } from '@/store/store';
 import { toggleMobileMenu, setMobileMenuOpen } from '@/store/features/navigationSlice';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { downloadFile } from '@/lib/downloadFile';
 import { cn } from '@/lib/utils';
 
 export const Header = () => {
@@ -60,36 +61,10 @@ export const Header = () => {
     }
   }, [isMobile, isMobileMenuOpen, dispatch]);
 
-  const downloadFile = (base64: string, fileName: string) => {
+  const handleDownload = (source: string, fileName: string) => {
     try {
-      const base64Parts = base64.split(',');
-      const mimeType = base64Parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-      const base64Data = base64Parts[1] || base64;
-      
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mimeType });
-      
-      let extension = '.pdf';
-      if (mimeType.includes('word') || mimeType.includes('officedocument') || mimeType.includes('msword')) {
-        extension = '.docx';
-      }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      // Use the title as the filename, replacing invalid characters with spaces
-      link.download = `${fileName.replace(/[\\/:*?"<>|]/g, ' ')}${extension}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Download error:", error);
+      downloadFile(source, fileName);
+    } catch {
       toast.error("Could not download file.");
     }
   };
@@ -114,7 +89,7 @@ export const Header = () => {
             {submenus.map((submenu: any, idx: number) => (
               <DropdownMenuItem 
                 key={idx} 
-                onClick={() => isDynamic ? downloadFile(submenu.href, submenu.name) : null}
+                onClick={() => isDynamic ? handleDownload(submenu.href, submenu.name) : null}
                 asChild={!isDynamic}
               >
                 {isDynamic ? (
@@ -202,7 +177,7 @@ export const Header = () => {
                         key={idx} 
                         onClick={() => {
                           if (isDynamic) {
-                            downloadFile(submenu.href, submenu.name);
+                            handleDownload(submenu.href, submenu.name);
                           } else {
                             window.location.href = submenu.href;
                           }

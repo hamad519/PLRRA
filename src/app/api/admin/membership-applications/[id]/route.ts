@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { parseId } from '@/lib/parseId';
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const numericId = parseId(id);
+  if (!numericId) return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
+
   try {
-    const deleted = await prisma.membershipApplication.delete({ where: { id } });
+    const deleted = await prisma.membershipApplication.delete({ where: { id: numericId } });
     return NextResponse.json({ message: 'Membership application deleted successfully', applicationId: deleted.id }, { status: 200 });
   } catch (error: any) {
     if (error.code === 'P2025') {

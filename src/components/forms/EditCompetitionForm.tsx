@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { AdminDatePicker } from '@/components/ui/AdminDatePicker';
 import { useRouter } from 'next/navigation';
+import { uploadImage } from '@/lib/uploadImage';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -108,23 +109,36 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
     }
   }, [competitionId, form, router]);
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  // Local preview only (not sent to server)
+  const fileToPreviewDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = (error) => reject(error);
     });
-  };
+
+  // Upload to /api/upload — returns public path
+  const uploadCompetitionImage = (file: File, isMain = false): Promise<string> =>
+    uploadImage(file, {
+      folder: 'competitions',
+      maxSizeMB: isMain ? 0.5 : 0.25,
+      maxWidthOrHeight: isMain ? 1920 : 1280,
+    });
 
   const handleMainImageChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-      const base64 = await convertFileToBase64(file);
-      setMainImagePreview(base64);
-      onChange(event.target.files);
+      try {
+        const url = await uploadCompetitionImage(file, true);
+        setMainImagePreview(url);
+        setInitialMainImageBase64(url);
+        onChange(event.target.files);
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to upload image');
+      }
     } else {
-      setMainImagePreview(initialMainImageBase64); // Revert to initial if cleared
+      setMainImagePreview(initialMainImageBase64);
       onChange(null);
     }
   };
@@ -132,12 +146,14 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
   const handleGalleryImagesChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     if (event.target.files && event.target.files.length > 0) {
       const files = Array.from(event.target.files);
-      const base64Previews = await Promise.all(files.map(file => convertFileToBase64(file)));
-      setGalleryImagePreviews(prev => [...prev, ...base64Previews]); // Add new to existing previews
-      onChange(files); // Pass the new files to react-hook-form
+      try {
+        const urls = await Promise.all(files.map(file => uploadCompetitionImage(file)));
+        setGalleryImagePreviews(prev => [...prev, ...urls]);
+        onChange(files);
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to upload gallery images');
+      }
     } else {
-      // If the user clears the file input, we don't want to clear existing gallery images
-      // The removeGalleryImage function handles explicit removal.
       onChange(null);
     }
   };
@@ -159,16 +175,10 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      let finalMainImageBase64 = initialMainImageBase64;
-      if (values.mainImage && values.mainImage.length > 0) {
-        finalMainImageBase64 = await convertFileToBase64(values.mainImage[0]);
-      } else if (mainImagePreview === null) {
-        finalMainImageBase64 = null; // Explicitly set to null if removed
-      }
+      // mainImagePreview already holds the uploaded URL (or initial DB URL, or null if removed)
+      const finalMainImageBase64 = mainImagePreview;
 
-      // The galleryImagePreviews state already holds the combined list of
-      // initial images and newly added images (as Base64 strings).
-      // We use this state directly for the final payload.
+      // galleryImagePreviews already holds URL strings (initial + uploaded)
       const finalGalleryImagesBase64 = galleryImagePreviews;
 
       const payload = {

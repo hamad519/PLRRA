@@ -1,16 +1,14 @@
 "use client";
 
-import React from 'react';
+import React, { use } from 'react';
 import { EditPastResultRecordForm } from '@/components/forms/EditPastResultRecordForm';
 
 interface EditPastResultRecordPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default function EditPastResultRecordPage({ params }: EditPastResultRecordPageProps) {
-  const { id } = params;
+  const { id } = use(params);
 
   return (
     <>

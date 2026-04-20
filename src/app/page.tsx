@@ -9,9 +9,13 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <HeroCarouselSection />
-      
+
       <Reveal direction="up">
         <CompetitionCarouselSection />
+      </Reveal>
+
+      <Reveal direction="up">
+        <UpcomingEventsSection />
       </Reveal>
 
       <Reveal direction="up" delay={0.3}>
@@ -20,10 +24,6 @@ export default function Home() {
 
       <Reveal direction="up">
         <RecordsSection />
-      </Reveal>
-
-      <Reveal direction="up">
-        <UpcomingEventsSection />
       </Reveal>
     </div>
   );

@@ -4,6 +4,7 @@ import { MembershipCategoriesSection } from "@/components/sections/MembershipCat
 import { HistorySection } from "@/components/sections/HistorySection";
 import { InternationalAscendancySection } from "@/components/sections/InternationalAscendancySection";
 import { MajorContributorsSection } from "@/components/sections/MajorContributorsSection";
+import { TestimonialSection } from "@/components/sections/TestimonialSection";
 
 export default function WhoWeArePage() {
   return (
@@ -13,6 +14,7 @@ export default function WhoWeArePage() {
       <MembershipCategoriesSection />
       <HistorySection />
       <InternationalAscendancySection />
+      <TestimonialSection />
       <MajorContributorsSection />
     </div>
   );

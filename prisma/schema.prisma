@@ -9,11 +9,11 @@ datasource db {
 
 // -------------------------- USER --------------------------
 model User {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   username  String   @unique
   email     String   @unique
   password  String
-  role      String   @default("user") // 'user' | 'admin'
+  role      String   @default("user")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -22,7 +22,7 @@ model User {
 
 // -------------------------- EVENT --------------------------
 model Event {
-  id              String   @id @default(uuid())
+  id              Int      @id @default(autoincrement())
   title           String
   date            DateTime
   location        String
@@ -33,79 +33,85 @@ model Event {
 
   registrations EventRegistration[]
 
+  @@index([date])
   @@map("events")
 }
 
 // -------------------------- COMPETITION --------------------------
 model Competition {
-  id                   String    @id @default(uuid())
+  id                   Int       @id @default(autoincrement())
   title                String
   fromDate             DateTime
   toDate               DateTime
   date                 DateTime?
   location             String
   mainImageBase64      String    @db.LongText
-  galleryImagesBase64  Json? // array of base64 strings
+  galleryImagesBase64  Json?
   description          String    @default("") @db.Text
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
+  @@index([fromDate])
   @@map("competitions")
 }
 
 // -------------------------- PRESS RELEASE --------------------------
 model PressRelease {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   title     String
   date      DateTime @default(now())
   pdfBase64 String   @db.LongText
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([date])
   @@map("press_releases")
 }
 
 // -------------------------- NATIONAL RECORD --------------------------
 model NationalRecord {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   year      Int
   title     String
   pdfBase64 String   @db.LongText
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([year])
   @@map("national_records")
 }
 
 // -------------------------- PAST RESULT RECORD --------------------------
 model PastResultRecord {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   title     String
   date      DateTime
   location  String
-  matches   Json // [{ name, pdfBase64, details }]
+  matches   Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([date])
   @@map("past_result_records")
 }
 
 // -------------------------- LATEST NEWS --------------------------
 model LatestNews {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   title     String
   date      DateTime @default(now())
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([isActive, date])
   @@map("latest_news")
 }
 
 // -------------------------- EVENT REGISTRATION --------------------------
 model EventRegistration {
-  id                      String   @id @default(uuid())
-  eventId                 String
+  id                      Int      @id @default(autoincrement())
+  eventId                 Int
   event                   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   firstName               String
   lastName                String
@@ -122,10 +128,10 @@ model EventRegistration {
   cnicCopyBase64          String   @db.LongText
   passportNo              String?  @default("")
   passportCopyBase64      String?  @db.LongText
-  weapons                 Json // [{ nomenclature, caliber, bodyNumber, madeBy }]
+  weapons                 Json
   weaponLicenseCopyBase64 String   @db.LongText
   bankChallanCopyBase64   String   @db.LongText
-  status                  String   @default("pending") // 'pending' | 'approved' | 'rejected'
+  status                  String   @default("pending")
   submittedAt             DateTime @default(now())
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
@@ -136,7 +142,7 @@ model EventRegistration {
 
 // -------------------------- MEMBERSHIP APPLICATION --------------------------
 model MembershipApplication {
-  id                      String   @id @default(uuid())
+  id                      Int      @id @default(autoincrement())
   membershipPlan          String
   firstName               String
   lastName                String
@@ -156,7 +162,7 @@ model MembershipApplication {
   passportCopyBase64      String?  @db.LongText
   phoneNo                 String
   email                   String
-  weapons                 Json // [{ nomenclature, caliber, bodyNumber, madeBy }]
+  weapons                 Json
   weaponLicenseCopyBase64 String   @db.LongText
   membershipFeeYear       String
   bankChallanCopyBase64   String   @db.LongText
@@ -168,10 +174,56 @@ model MembershipApplication {
   @@map("membership_applications")
 }
 
+// -------------------------- TESTIMONIAL --------------------------
+model Testimonial {
+  id          Int      @id @default(autoincrement())
+  name        String
+  designation String   @default("")
+  message     String   @db.Text
+  imageUrl    String?  @db.Text
+  rating      Int      @default(5)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("testimonials")
+}
+
+// -------------------------- ACHIEVEMENT (International Ascendancy) ---
+model Achievement {
+  id        Int      @id @default(autoincrement())
+  year      String
+  title     String
+  subtitle  String   @default("")
+  details   Json // string[]
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("achievements")
+}
+
+// -------------------------- CONTRIBUTOR (Major Contributors) ---------
+model Contributor {
+  id            Int      @id @default(autoincrement())
+  name          String
+  role          String   @default("")
+  contributions Json // string[]
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("contributors")
+}
+
 // -------------------------- SITE SETTINGS --------------------------
-// Single row table (singleton)
 model SiteSettings {
-  id                String   @id @default(uuid())
+  id                Int      @id @default(autoincrement())
   address           String   @default("Pakistan Long Range Rifle Association C/O Army Marksmanship Unit Jhelum Cantonment") @db.Text
   contactNo         String   @default("0092-544-620081")
   email             String   @default("plra.pakistan2022@gmail.com")
@@ -180,9 +232,10 @@ model SiteSettings {
   instagramLink     String   @default("https://instagram.com") @db.Text
   isMaintenanceMode Boolean  @default(false)
   plraIntro         String   @default("") @db.Text
-  stats             Json? // { nationalRecords, internationalMedals, eliteShooters, growthRate }
-  championMoments   Json? // [{ title, imageBase64 }]
-  heroSlides        Json? // [{ title, subtitle, description, imageBase64 }]
+  stats             Json?
+  championMoments   Json?
+  heroSlides        Json?
+  accountDetails    Json? // { bankName, accountTitle, accountNumber, iban, branchCode }
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

@@ -10,9 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Save, Plus, Trash2, Image as ImageIcon, Trophy, Layout, Info, Upload, XCircle } from 'lucide-react';
+import { Save, Plus, Trash2, Image as ImageIcon, Trophy, Layout, Info, Upload, XCircle, Landmark } from 'lucide-react';
 import { Reveal } from '@/components/animations/Reveal';
 import Image from 'next/image';
+import { uploadImage } from '@/lib/uploadImage';
 
 const contentSchema = z.object({
   plraIntro: z.string().min(10, "Introduction is too short"),
@@ -21,6 +22,13 @@ const contentSchema = z.object({
     internationalMedals: z.string(),
     eliteShooters: z.string(),
     growthRate: z.string(),
+  }),
+  accountDetails: z.object({
+    bankName: z.string(),
+    accountTitle: z.string(),
+    accountNumber: z.string(),
+    iban: z.string(),
+    branchCode: z.string(),
   }),
   championMoments: z.array(z.object({
     title: z.string(),
@@ -43,6 +51,7 @@ export const SiteContentForm = () => {
     defaultValues: {
       plraIntro: "",
       stats: { nationalRecords: "", internationalMedals: "", eliteShooters: "", growthRate: "" },
+      accountDetails: { bankName: "", accountTitle: "", accountNumber: "", iban: "", branchCode: "" },
       championMoments: [],
       heroSlides: [],
     },
@@ -67,6 +76,7 @@ export const SiteContentForm = () => {
           form.reset({
             plraIntro: data.data.plraIntro,
             stats: data.data.stats,
+            accountDetails: data.data.accountDetails || { bankName: "", accountTitle: "", accountNumber: "", iban: "", branchCode: "" },
             championMoments: data.data.championMoments || [],
             heroSlides: data.data.heroSlides || [],
           });
@@ -80,19 +90,14 @@ export const SiteContentForm = () => {
     fetchContent();
   }, [form]);
 
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, callback: (base64: string) => void) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
     if (e.target.files?.[0]) {
-      const base64 = await convertToBase64(e.target.files[0]);
-      callback(base64);
+      try {
+        const url = await uploadImage(e.target.files[0], { folder: 'site', maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
+        callback(url);
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to upload image');
+      }
     }
   };
 
@@ -104,11 +109,16 @@ export const SiteContentForm = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.success) {
         toast.success("Site content updated successfully!");
+      } else {
+        console.error('Save failed:', data);
+        toast.error(data.message || "Failed to save changes");
       }
-    } catch (error) {
-      toast.error("Failed to save changes");
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast.error(error.message || "Failed to save changes");
     } finally {
       setIsSaving(false);
     }
@@ -199,7 +209,70 @@ export const SiteContentForm = () => {
           </Card>
         </Reveal>
 
-        {/* Section 3: Hero Carousel */}
+        {/* Section 3: Account Details */}
+        <Reveal direction="up" delay={0.15}>
+          <Card className="bg-white border-none shadow-xl rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="p-8 bg-admin-bg/50 border-b border-admin-border">
+              <CardTitle className="text-xl font-black flex items-center gap-3">
+                <Landmark className="text-admin-accent" /> Bank Account Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="accountDetails.bankName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold">Bank Name</FormLabel>
+                    <FormControl><Input placeholder="e.g., Habib Bank Limited (HBL)" {...field} className="bg-admin-bg border-none h-12 rounded-xl" /></FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="accountDetails.accountTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold">Account Title</FormLabel>
+                    <FormControl><Input placeholder="e.g., Pakistan Long Range Rifle Association" {...field} className="bg-admin-bg border-none h-12 rounded-xl" /></FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="accountDetails.accountNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold">Account Number</FormLabel>
+                    <FormControl><Input placeholder="e.g., 1234567890" {...field} className="bg-admin-bg border-none h-12 rounded-xl" /></FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="accountDetails.iban"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold">IBAN</FormLabel>
+                    <FormControl><Input placeholder="e.g., PK36HABB0012345678901234" {...field} className="bg-admin-bg border-none h-12 rounded-xl" /></FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="accountDetails.branchCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold">Branch Code</FormLabel>
+                    <FormControl><Input placeholder="e.g., 0123" {...field} className="bg-admin-bg border-none h-12 rounded-xl" /></FormControl>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+        </Reveal>
+
+        {/* Section 4: Hero Carousel */}
         <Reveal direction="up" delay={0.2}>
           <Card className="bg-white border-none shadow-xl rounded-[2.5rem] overflow-hidden">
             <CardHeader className="p-8 bg-admin-bg/50 border-b border-admin-border flex flex-row items-center justify-between">

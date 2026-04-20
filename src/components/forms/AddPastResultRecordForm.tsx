@@ -23,6 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { uploadFile } from '@/lib/uploadFile';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_FILE_TYPES = [
@@ -73,14 +74,8 @@ export const AddPastResultRecordForm = () => {
     name: "matches",
   });
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
+  const convertFileToBase64 = (file: File): Promise<string> =>
+    uploadFile(file, 'past-results');
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void, index: number) => {
     if (event.target.files && event.target.files.length > 0) {

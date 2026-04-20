@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { parseId } from '@/lib/parseId';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const numericId = parseId(id);
+  if (!numericId) return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
+
   try {
     const registration = await prisma.eventRegistration.findUnique({
-      where: { id },
+      where: { id: numericId },
       include: { event: { select: { title: true } } },
     });
 
@@ -27,6 +31,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const numericId = parseId(id);
+  if (!numericId) return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
+
   try {
     const { status } = await req.json();
 
@@ -35,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const registration = await prisma.eventRegistration.update({
-      where: { id },
+      where: { id: numericId },
       data: { status },
       include: { event: { select: { title: true } } },
     });

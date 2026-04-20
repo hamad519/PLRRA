@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: false,
   serverExternalPackages: ['pdf-parse', 'mammoth'],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '500mb',
+    },
+  },
   webpack: (config) => {
     if (process.env.NODE_ENV === "development") {
       config.module.rules.push({

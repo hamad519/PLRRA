@@ -1,21 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Reveal } from '@/components/animations/Reveal';
 import { Target, ShieldCheck, Globe, Award } from 'lucide-react';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export const AboutSectionContent = () => {
-  const [intro, setIntro] = useState("");
-
-  useEffect(() => {
-    fetch('/api/settings')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.data?.plraIntro) {
-          setIntro(data.data.plraIntro);
-        }
-      });
-  }, []);
+  const { settings } = useSiteSettings();
+  const intro = settings?.plraIntro || "";
 
   return (
     <section className="bg-white py-24 px-4 md:px-8">

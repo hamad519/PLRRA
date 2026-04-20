@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Trophy, Trash2, Download, Calendar, Eye } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
 import { DocumentViewerModal } from '@/components/admin/DocumentViewerModal';
+import { downloadFile } from '@/lib/downloadFile';
 
 interface NationalRecord {
   _id: string;
@@ -54,35 +55,10 @@ export default function ManageNationalRecordsPage() {
     setViewerOpen(true);
   };
 
-  const downloadFile = (base64: string, fileName: string) => {
+  const handleDownload = (source: string, fileName: string) => {
     try {
-      const base64Parts = base64.split(',');
-      const mimeType = base64Parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-      const base64Data = base64Parts[1] || base64;
-      
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mimeType });
-      
-      let extension = '.pdf';
-      if (mimeType.includes('word') || mimeType.includes('officedocument')) {
-        extension = '.docx';
-      }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${fileName.replace(/[^a-z0-9]/gi, '_')}${extension}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Download error:", error);
+      downloadFile(source, fileName);
+    } catch {
       toast.error("Could not download file.");
     }
   };
@@ -137,7 +113,7 @@ export default function ManageNationalRecordsPage() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => downloadFile(record.pdfBase64, record.title)}
+                        onClick={() => handleDownload(record.pdfBase64, record.title)}
                         className="text-blue-500 hover:bg-blue-50"
                         title="Download File"
                       >

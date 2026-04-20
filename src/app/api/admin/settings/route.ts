@@ -1,14 +1,27 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+const DEFAULT_STATS = { nationalRecords: '0', internationalMedals: '0', eliteShooters: '0', growthRate: '0%' };
+
 export async function GET() {
   try {
     let settings = await prisma.siteSettings.findFirst();
     if (!settings) {
-      settings = await prisma.siteSettings.create({ data: {} });
+      settings = await prisma.siteSettings.create({ data: { stats: DEFAULT_STATS } });
     }
-    return NextResponse.json({ success: true, data: settings });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...settings,
+        stats: settings.stats ?? DEFAULT_STATS,
+        championMoments: settings.championMoments ?? [],
+        heroSlides: settings.heroSlides ?? [],
+        accountDetails: settings.accountDetails ?? { bankName: '', accountTitle: '', accountNumber: '', iban: '', branchCode: '' },
+      },
+    });
   } catch (error: any) {
+    console.error('[GET /api/admin/settings] Error:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
@@ -17,24 +30,39 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // Only whitelist SiteSettings fields
     const data: any = {};
-    const fields = [
+    const scalarFields = [
       'address', 'contactNo', 'email', 'workingHours',
-      'facebookLink', 'instagramLink', 'isMaintenanceMode',
-      'plraIntro', 'stats', 'championMoments', 'heroSlides',
+      'facebookLink', 'instagramLink', 'isMaintenanceMode', 'plraIntro',
     ];
-    for (const key of fields) {
+    for (const key of scalarFields) {
       if (body[key] !== undefined) data[key] = body[key];
     }
+
+    // JSON fields — pass through as-is. Prisma will serialize them.
+    if (body.stats !== undefined) data.stats = body.stats;
+    if (body.championMoments !== undefined) data.championMoments = body.championMoments;
+    if (body.heroSlides !== undefined) data.heroSlides = body.heroSlides;
+    if (body.accountDetails !== undefined) data.accountDetails = body.accountDetails;
 
     const existing = await prisma.siteSettings.findFirst();
     const settings = existing
       ? await prisma.siteSettings.update({ where: { id: existing.id }, data })
       : await prisma.siteSettings.create({ data });
 
-    return NextResponse.json({ success: true, message: 'Settings updated successfully', data: settings });
+    return NextResponse.json({
+      success: true,
+      message: 'Settings updated successfully',
+      data: {
+        ...settings,
+        stats: settings.stats ?? DEFAULT_STATS,
+        championMoments: settings.championMoments ?? [],
+        heroSlides: settings.heroSlides ?? [],
+        accountDetails: settings.accountDetails ?? { bankName: '', accountTitle: '', accountNumber: '', iban: '', branchCode: '' },
+      },
+    });
   } catch (error: any) {
+    console.error('[POST /api/admin/settings] Error:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

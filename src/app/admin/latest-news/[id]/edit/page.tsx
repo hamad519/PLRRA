@@ -3,10 +3,11 @@ import { EditLatestNewsForm } from '@/components/forms/EditLatestNewsForm';
 import { Reveal } from '@/components/animations/Reveal';
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default function EditLatestNewsPage({ params }: Props) {
+export default async function EditLatestNewsPage({ params }: Props) {
+  const { id } = await params;
   return (
     <div className="space-y-10">
       <header>
@@ -17,7 +18,7 @@ export default function EditLatestNewsPage({ params }: Props) {
           <p className="text-admin-text-secondary font-medium mt-1">Update the news text or toggle its visibility in the ticker.</p>
         </Reveal>
       </header>
-      <EditLatestNewsForm id={params.id} />
+      <EditLatestNewsForm id={id} />
     </div>
   );
 }
