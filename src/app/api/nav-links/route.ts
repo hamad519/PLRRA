@@ -16,7 +16,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      records.map((r: any) => ({ name: `${r.title} (${r.year})`, href: r.pdfBase64 })),
+      records: records.map((r: any) => ({ name: `${r.title} (${r.year})`, href: r.pdfBase64 })),
       pressReleases: pressReleases.map((p: any) => ({ name: p.title, href: p.pdfBase64 })),
     });
   } catch (error: any) {
