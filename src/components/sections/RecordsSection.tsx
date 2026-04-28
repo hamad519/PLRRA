@@ -52,7 +52,7 @@ export const RecordsSection = () => {
     { icon: TrendingUp, label: "Growth Rate", value: data?.stats?.growthRate || "25%", color: "text-emerald-500" },
   ];
 
-  const moments = data?.championMoments?.length > 0 
+  const moments = data?.championMoments && data.championMoments.length > 0 
     ? data.championMoments 
     : [
         { title: "Championship Moment", imageBase64: "/16.jpeg" },
