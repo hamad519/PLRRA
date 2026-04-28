@@ -3,7 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: false,
 
-  // correct for Next.js App Router
   serverExternalPackages: ["pdf-parse", "mammoth"],
 
   experimental: {
@@ -12,7 +11,8 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // IMPORTANT: force webpack mode (avoids Turbopack conflict)
+  turbopack: {}, // 🔥 THIS FIXES YOUR ERROR
+
   webpack: (config, { dev }) => {
     if (dev) {
       config.module.rules.push({
@@ -24,7 +24,6 @@ const nextConfig: NextConfig = {
         },
       });
     }
-
     return config;
   },
 };
