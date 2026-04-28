@@ -65,7 +65,7 @@ export async function GET() {
       },
       orderBy: { submittedAt: 'desc' },
     });
-    const data = applications.map((a) => ({ ...a, _id: a.id }));
+    const data = applications.map((a: any) => ({ ...a, _id: a.id }));
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: 'Failed to fetch membership applications', error: error.message }, { status: 500 });

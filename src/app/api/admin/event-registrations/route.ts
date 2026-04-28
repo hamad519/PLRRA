@@ -68,7 +68,7 @@ export async function GET() {
       orderBy: { submittedAt: 'desc' },
     });
 
-    const formatted = registrations.map((r) => ({
+    const formatted = registrations.map((r: any) => ({
       ...r,
       _id: r.id,
       eventId: { _id: r.eventId, title: r.event?.title ?? '' },

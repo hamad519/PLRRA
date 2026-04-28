@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     const records = await prisma.nationalRecord.findMany({ orderBy: [{ year: 'desc' }, { createdAt: 'desc' }] });
-    const data = records.map((r) => ({ ...r, _id: r.id }));
+    const data = records.map((r: any) => ({ ...r, _id: r.id }));
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
