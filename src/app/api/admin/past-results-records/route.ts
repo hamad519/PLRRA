@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     const records = await prisma.pastResultRecord.findMany({ orderBy: { date: 'desc' } });
-    const data = records.map((r) => ({ ...r, _id: r.id }));
+    const data = records.map((r: any) => ({ ...r, _id: r.id }));
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: 'Failed to fetch past results/records', error: error.message }, { status: 500 });

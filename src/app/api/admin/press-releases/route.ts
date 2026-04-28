@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     const releases = await prisma.pressRelease.findMany({ orderBy: { date: 'desc' } });
-    const data = releases.map((r) => ({ ...r, _id: r.id }));
+    const data = releases.map((r: any) => ({ ...r, _id: r.id }));
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

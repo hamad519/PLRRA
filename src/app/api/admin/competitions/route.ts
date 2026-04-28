@@ -44,7 +44,7 @@ export async function GET() {
       },
       orderBy: { fromDate: 'desc' },
     });
-    const data = competitions.map((c) => ({ ...c, _id: c.id }));
+    const data = competitions.map((c: any) => ({ ...c, _id: c.id }));
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: 'Failed to fetch competitions', error: error.message }, { status: 500 });

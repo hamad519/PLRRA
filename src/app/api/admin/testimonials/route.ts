@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     const testimonials = await prisma.testimonial.findMany({ orderBy: { createdAt: 'desc' } });
-    const data = testimonials.map((t) => ({ ...t, _id: t.id }));
+    const data = testimonials.map((t: any) => ({ ...t, _id: t.id }));
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

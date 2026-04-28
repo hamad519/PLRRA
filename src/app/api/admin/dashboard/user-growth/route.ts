@@ -12,7 +12,7 @@ export async function GET() {
     `;
 
     let cumulative = 0;
-    const formattedData = rows.map((row) => {
+    const formattedData = rows.map((row: any) => {
       cumulative += Number(row.count);
       const date = new Date(row.year, row.month - 1);
       const monthName = date.toLocaleString('default', { month: 'short' });

@@ -16,8 +16,8 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      records: records.map((r) => ({ name: `${r.title} (${r.year})`, href: r.pdfBase64 })),
-      pressReleases: pressReleases.map((p) => ({ name: p.title, href: p.pdfBase64 })),
+      records: records.map((r: any) => ({ name: `${r.title} (${r.year})`, href: r.pdfBase64 })),
+      pressReleases: pressReleases.map((p: any) => ({ name: p.title, href: p.pdfBase64 })),
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
