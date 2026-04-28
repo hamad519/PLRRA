@@ -1,35 +1,73 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import MembershipApplication from '@/models/MembershipApplication';
+import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
-  await dbConnect();
-
   try {
-    const applicationData = await req.json();
+    const d = await req.json();
 
-    // Basic validation (more detailed validation is handled by Zod in the form)
-    if (!applicationData.firstName || !applicationData.email || !applicationData.cnicNo) {
+    if (!d.firstName || !d.email || !d.cnicNo) {
       return NextResponse.json({ message: 'Missing required application fields' }, { status: 400 });
     }
 
-    const newApplication = await MembershipApplication.create(applicationData);
-    
-    return NextResponse.json({ message: 'Membership application submitted successfully', applicationId: newApplication._id }, { status: 201 });
+    const newApplication = await prisma.membershipApplication.create({
+      data: {
+        membershipPlan: d.membershipPlan,
+        firstName: d.firstName,
+        lastName: d.lastName,
+        fatherName: d.fatherName,
+        religion: d.religion,
+        dateOfBirth: new Date(d.dateOfBirth),
+        profession: d.profession,
+        addressLine1: d.addressLine1,
+        city: d.city,
+        state: d.state,
+        jobBusinessAddress: d.jobBusinessAddress,
+        presentHomeAddress: d.presentHomeAddress,
+        permanentHomeAddress: d.permanentHomeAddress,
+        cnicNo: d.cnicNo,
+        cnicCopyBase64: d.cnicCopyBase64,
+        passportNo: d.passportNo || '',
+        passportCopyBase64: d.passportCopyBase64 || null,
+        phoneNo: d.phoneNo,
+        email: d.email,
+        weapons: d.weapons ?? [],
+        weaponLicenseCopyBase64: d.weaponLicenseCopyBase64,
+        membershipFeeYear: d.membershipFeeYear,
+        bankChallanCopyBase64: d.bankChallanCopyBase64,
+        status: d.status || 'pending',
+      },
+    });
+
+    return NextResponse.json(
+      { message: 'Membership application submitted successfully', applicationId: newApplication.id },
+      { status: 201 }
+    );
   } catch (error: any) {
-    console.error('Membership application submission error:', error);
     return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 }
 
-export async function GET(req: Request) {
-  await dbConnect();
-
+export async function GET() {
   try {
-    const applications = await MembershipApplication.find({}).sort({ submittedAt: -1 });
-    return NextResponse.json({ success: true, data: applications }, { status: 200 });
+    const applications = await prisma.membershipApplication.findMany({
+      select: {
+        id: true,
+        membershipPlan: true,
+        firstName: true,
+        lastName: true,
+        fatherName: true,
+        email: true,
+        phoneNo: true,
+        cnicNo: true,
+        city: true,
+        status: true,
+        submittedAt: true,
+      },
+      orderBy: { submittedAt: 'desc' },
+    });
+    const data = applications.map((a) => ({ ...a, _id: a.id }));
+    return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: any) {
-    console.error('Error fetching membership applications:', error);
     return NextResponse.json({ success: false, message: 'Failed to fetch membership applications', error: error.message }, { status: 500 });
   }
 }

@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { uploadImage } from '@/lib/uploadImage';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -97,23 +98,22 @@ export const EditUpcomingEventForm = ({ eventId }: EditUpcomingEventFormProps) =
     }
   }, [eventId, form, router]);
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
+  const uploadEventImage = (file: File): Promise<string> =>
+    uploadImage(file, { folder: 'events', maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
 
   const handleMainImageChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-      const base64 = await convertFileToBase64(file);
-      setMainImagePreview(base64);
-      onChange(event.target.files);
+      try {
+        const url = await uploadEventImage(file);
+        setMainImagePreview(url);
+        setInitialMainImageBase64(url);
+        onChange(event.target.files);
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to upload image');
+      }
     } else {
-      setMainImagePreview(initialMainImageBase64); // Revert to initial if cleared
+      setMainImagePreview(initialMainImageBase64);
       onChange(null);
     }
   };
@@ -129,12 +129,8 @@ export const EditUpcomingEventForm = ({ eventId }: EditUpcomingEventFormProps) =
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      let finalMainImageBase64 = initialMainImageBase64;
-      if (values.mainImage && values.mainImage.length > 0) {
-        finalMainImageBase64 = await convertFileToBase64(values.mainImage[0]);
-      } else if (mainImagePreview === null) {
-        finalMainImageBase64 = null; // Explicitly set to null if removed
-      }
+      // mainImagePreview already holds either the initial DB URL or the freshly uploaded URL
+      const finalMainImageBase64 = mainImagePreview;
 
       if (!finalMainImageBase64) {
         toast.error("Main image is required.");

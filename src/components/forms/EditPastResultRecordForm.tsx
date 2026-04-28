@@ -23,6 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { uploadFile } from '@/lib/uploadFile';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_PDF_TYPES = ["application/pdf"];
@@ -113,14 +114,8 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
     }
   }, [recordId, form, router]);
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
+  const convertFileToBase64 = (file: File): Promise<string> =>
+    uploadFile(file, 'past-results');
 
   const handlePdfChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -129,9 +124,14 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
   ) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-      const base64 = await convertFileToBase64(file);
-      setPdfPreviews((prev) => ({ ...prev, [index]: base64 }));
-      onChange(event.target.files);
+      try {
+        const url = await uploadFile(file, 'past-results');
+        setPdfPreviews((prev) => ({ ...prev, [index]: url }));
+        form.setValue(`matches.${index}.pdfBase64`, url);
+        onChange(event.target.files);
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to upload document');
+      }
     } else {
       const currentMatch = form.getValues(`matches.${index}`);
       setPdfPreviews((prev) => ({ ...prev, [index]: currentMatch.pdfBase64 || null }));
@@ -156,11 +156,10 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
     try {
       const matchesWithBase64 = await Promise.all(
         values.matches.map(async (match, index) => {
+          // pdfBase64 was set (to a URL path) when the file was selected, so use it directly
           let finalPdfBase64: string | undefined = match.pdfBase64;
 
-          if (match.pdf && match.pdf.length > 0) {
-            finalPdfBase64 = await convertFileToBase64(match.pdf[0]);
-          } else if (pdfPreviews[index] === null) {
+          if (pdfPreviews[index] === null) {
             finalPdfBase64 = undefined;
           }
 

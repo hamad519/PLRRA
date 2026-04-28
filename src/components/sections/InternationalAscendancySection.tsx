@@ -1,54 +1,72 @@
-import React from 'react';
+"use client";
+
+import React, { useEffect, useState } from 'react';
 import { Trophy, Flag, Medal, Globe, Star, Award } from 'lucide-react';
 import { Reveal } from '@/components/animations/Reveal';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const ICON_MAP: Record<number, any> = { 0: Trophy, 1: Flag, 2: Medal, 3: Globe, 4: Award, 5: Star };
+const COLOR_MAP: Record<number, string> = {
+  0: 'from-blue-500 to-cyan-400',
+  1: 'from-purple-500 to-pink-500',
+  2: 'from-plra-gold to-orange-500',
+  3: 'from-emerald-500 to-teal-400',
+  4: 'from-red-500 to-rose-400',
+  5: 'from-indigo-500 to-blue-500',
+};
+
+interface Achievement {
+  id: number;
+  year: string;
+  title: string;
+  subtitle: string;
+  details: string[];
+}
 
 export const InternationalAscendancySection = () => {
-  const achievements = [
-    {
-      year: '2023',
-      title: 'International Breakthrough',
-      subtitle: '6th F Class World Championships',
-      icon: Trophy,
-      color: 'from-blue-500 to-cyan-400',
-      details: [
-        'Earned international acclaim for skill and sportsmanship.',
-        'Debut with impressive 5th position globally.',
-        'European F Class Championships: Won International Rutland Team Cup (Gold).',
-        'Individual Medals: 2x Gold, 4x Silver, 1x Bronze.',
-      ],
-    },
-    {
-      year: '2024',
-      title: 'European Dominance',
-      subtitle: 'European F Class Championships (UK)',
-      icon: Flag,
-      color: 'from-purple-500 to-pink-500',
-      details: [
-        'International Rutland Team Cup – Team Bronze Medal.',
-        'Individual Medals: 3x Gold, 5x Silver, 5x Bronze.',
-        'Set 2 new GB F-Class Records.',
-        'Solidified position as a top-tier international contender.',
-      ],
-    },
-    {
-      year: '2025',
-      title: 'Global Supremacy',
-      subtitle: 'South African Open Championship',
-      icon: Medal,
-      color: 'from-plra-gold to-orange-500',
-      details: [
-        'Defeated South Africa on home turf in both Team Events.',
-        'Vice President Team FTR Match: Gold Medal (97.3% accuracy).',
-        'Chairman’s Team FTR Match: Gold Medal (98% accuracy).',
-        'Individual Events: 13 medals total (5x Gold, 3x Silver, 5x Bronze).',
-      ],
-    },
-  ];
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch('/api/admin/achievements');
+        const data = await res.json();
+        if (data.success) setAchievements(data.data);
+      } catch { /* silently fall through */ }
+      finally { setLoading(false); }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="bg-white py-24 px-4 md:px-8">
+        <div className="container mx-auto">
+          <div className="text-center mb-20 space-y-4">
+            <Skeleton className="h-4 w-40 mx-auto" />
+            <Skeleton className="h-14 w-[50%] mx-auto" />
+            <Skeleton className="h-4 w-[40%] mx-auto" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-plra-bg-soft rounded-[2.5rem] p-10 space-y-6">
+                <div className="flex justify-between"><Skeleton className="w-16 h-16 rounded-2xl" /><Skeleton className="w-16 h-10" /></div>
+                <Skeleton className="h-7 w-[70%]" /><Skeleton className="h-4 w-[50%]" />
+                {[1, 2, 3, 4].map((j) => <Skeleton key={j} className="h-4 w-full" />)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (achievements.length === 0) return null;
 
   return (
     <section className="bg-white py-24 px-4 md:px-8 relative overflow-hidden">
-      {/* Subtle Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-plra-accent-purple/5 rounded-full blur-[120px] -z-10"></div>
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-plra-accent-pink/5 rounded-full blur-[120px] -z-10"></div>
 
@@ -74,46 +92,47 @@ export const InternationalAscendancySection = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {achievements.map((item, index) => (
-            <Reveal key={index} delay={index * 0.2} direction="up">
-              <div className="group relative h-full">
-                {/* Card Glow Effect - Softer for light theme */}
-                <div className={cn("absolute -inset-0.5 rounded-[2.5rem] opacity-10 group-hover:opacity-30 blur-xl transition duration-500 bg-gradient-to-r", item.color)}></div>
-                
-                <div className="relative h-full bg-plra-bg-soft border border-gray-100 rounded-[2.5rem] p-10 flex flex-col hover:bg-white hover:shadow-2xl transition-all duration-500">
-                  <div className="flex justify-between items-start mb-8">
-                    <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br", item.color)}>
-                      <item.icon size={32} />
+          {achievements.map((item, index) => {
+            const IconComp = ICON_MAP[index % 6] || Trophy;
+            const color = COLOR_MAP[index % 6];
+            const details = (item.details ?? []) as string[];
+
+            return (
+              <Reveal key={item.id} delay={index * 0.2} direction="up">
+                <div className="group relative h-full">
+                  <div className={cn("absolute -inset-0.5 rounded-[2.5rem] opacity-10 group-hover:opacity-30 blur-xl transition duration-500 bg-gradient-to-r", color)}></div>
+                  <div className="relative h-full bg-plra-bg-soft border border-gray-100 rounded-[2.5rem] p-10 flex flex-col hover:bg-white hover:shadow-2xl transition-all duration-500">
+                    <div className="flex justify-between items-start mb-8">
+                      <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br", color)}>
+                        <IconComp size={32} />
+                      </div>
+                      <span className="text-4xl font-black text-gray-200 group-hover:text-gray-300 transition-colors">{item.year}</span>
                     </div>
-                    <span className="text-4xl font-black text-gray-200 group-hover:text-gray-300 transition-colors">{item.year}</span>
-                  </div>
-
-                  <h3 className="text-2xl font-black text-plra-black mb-2 group-hover:text-plra-accent-purple transition-colors">{item.title}</h3>
-                  <p className="text-plra-accent-pink font-bold text-sm uppercase tracking-widest mb-8">{item.subtitle}</p>
-
-                  <ul className="space-y-4 flex-grow">
-                    {item.details.map((detail, dIndex) => (
-                      <li key={dIndex} className="flex items-start gap-3 text-gray-600 group-hover:text-gray-700 transition-colors">
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-plra-gold flex-shrink-0"></div>
-                        <span className="text-sm leading-relaxed">{detail}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-10 pt-8 border-t border-gray-100 flex items-center justify-between">
-                    <div className="flex -space-x-2">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center">
-                          <Star size={12} className="text-plra-gold" />
-                        </div>
+                    <h3 className="text-2xl font-black text-plra-black mb-2 group-hover:text-plra-accent-purple transition-colors">{item.title}</h3>
+                    <p className="text-plra-accent-pink font-bold text-sm uppercase tracking-widest mb-8">{item.subtitle}</p>
+                    <ul className="space-y-4 flex-grow">
+                      {details.map((detail, dIndex) => (
+                        <li key={dIndex} className="flex items-start gap-3 text-gray-600 group-hover:text-gray-700 transition-colors">
+                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-plra-gold flex-shrink-0"></div>
+                          <span className="text-sm leading-relaxed">{detail}</span>
+                        </li>
                       ))}
+                    </ul>
+                    <div className="mt-10 pt-8 border-t border-gray-100 flex items-center justify-between">
+                      <div className="flex -space-x-2">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center">
+                            <Star size={12} className="text-plra-gold" />
+                          </div>
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Elite Performance</span>
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Elite Performance</span>
                   </div>
                 </div>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
 
         <Reveal delay={0.8} direction="up">

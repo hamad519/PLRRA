@@ -1,25 +1,48 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Target, Users, Handshake, ShieldCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Reveal } from '@/components/animations/Reveal';
 import { cn } from '@/lib/utils';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const AboutSection = () => {
-  const [intro, setIntro] = useState("");
+  const { settings, loading } = useSiteSettings();
+  const intro = settings?.plraIntro || "";
 
-  useEffect(() => {
-    fetch('/api/settings')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.data?.plraIntro) {
-          setIntro(data.data.plraIntro);
-        }
-      });
-  }, []);
+  if (loading) {
+    return (
+      <section className="bg-plra-bg-soft py-24 px-4 md:px-8">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-24">
+            <Skeleton className="aspect-[4/3] rounded-3xl" />
+            <div className="space-y-6">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-12 w-[80%]" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-[90%]" />
+              <Skeleton className="h-4 w-[75%]" />
+              <Skeleton className="h-12 w-40 rounded-xl mt-4" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-3xl p-8 space-y-4">
+                <Skeleton className="h-14 w-14 rounded-2xl" />
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-[80%]" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const aims = [
     { icon: Target, title: "Development", text: "Encouraging participation and growth in the sport of Long-Range Rifle Shooting across Pakistan.", color: "bg-blue-500" },

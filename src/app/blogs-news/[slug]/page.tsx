@@ -1,12 +1,10 @@
 import { notFound } from 'next/navigation';
 import { blogs } from '@/lib/blog-data';
 import { SingleBlogContentSection } from '@/components/sections/SingleBlogContentSection';
-import { BlogHeroSection } from '@/components/sections/BlogHeroSection'; // New hero for single blog
+import { BlogHeroSection } from '@/components/sections/BlogHeroSection';
 
 interface BlogPageProps {
-  params: {
-    slug: string;
-  };
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
@@ -15,8 +13,9 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function SingleBlogPage({ params }: BlogPageProps) {
-  const blog = blogs.find((b) => b.slug === params.slug);
+export default async function SingleBlogPage({ params }: BlogPageProps) {
+  const { slug } = await params;
+  const blog = blogs.find((b) => b.slug === slug);
 
   if (!blog) {
     notFound();

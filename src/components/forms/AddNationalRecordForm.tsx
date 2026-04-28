@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Upload, Trophy, FileText, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { uploadFile } from '@/lib/uploadFile';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_FILE_TYPES = [
@@ -43,19 +44,10 @@ export const AddNationalRecordForm = () => {
   const selectedFiles = form.watch("pdf");
   const fileName = selectedFiles?.[0]?.name;
 
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const pdfBase64 = await convertToBase64(values.pdf[0]);
+      const pdfBase64 = await uploadFile(values.pdf[0], 'national-records');
       const res = await fetch('/api/admin/national-records', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

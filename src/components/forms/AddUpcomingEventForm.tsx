@@ -23,6 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import Image from 'next/image';
+import { uploadImage } from '@/lib/uploadImage';
 import { useRouter } from 'next/navigation';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -60,20 +61,24 @@ export const AddUpcomingEventForm = () => {
     },
   });
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  // Local preview only (data URL, not sent to server)
+  const fileToPreviewDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = (error) => reject(error);
     });
-  };
+
+  // Upload to /api/upload — returns public URL like /uploads/events/xxx.jpg
+  const uploadEventImage = (file: File): Promise<string> =>
+    uploadImage(file, { folder: 'events', maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
 
   const handleMainImageChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-      const base64 = await convertFileToBase64(file);
-      setMainImagePreview(base64);
+      const preview = await fileToPreviewDataUrl(file);
+      setMainImagePreview(preview);
       onChange(event.target.files);
     } else {
       setMainImagePreview(null);
@@ -91,8 +96,8 @@ export const AddUpcomingEventForm = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const mainImageBase64 = values.mainImage && values.mainImage.length > 0 
-        ? await convertFileToBase64(values.mainImage[0]) 
+      const mainImageBase64 = values.mainImage && values.mainImage.length > 0
+        ? await uploadEventImage(values.mainImage[0])
         : undefined;
 
       const payload = {

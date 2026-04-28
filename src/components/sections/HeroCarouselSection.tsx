@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
@@ -8,42 +8,34 @@ import { Reveal } from '@/components/animations/Reveal';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { HeroSkeleton } from '@/components/ui/PageSkeletons';
+
+const FALLBACK_SLIDES = [
+  {
+    imageBase64: "/hero_sec_img.png",
+    title: "PAKISTAN LONG <span class='text-transparent bg-clip-text bg-gradient-to-r from-plra-accent-purple to-plra-accent-pink'>RANGE RIFLE ASSOCIATION</span>",
+    subtitle: "Precision. Discipline. Excellence.",
+    description: "The national governing body for Full-bore rifle shooting in Pakistan, dedicated to fostering world-class marksmanship and international representation.",
+  },
+  {
+    imageBase64: "/1.jpeg",
+    title: "WORLD CLASS <span class='text-transparent bg-clip-text bg-gradient-to-r from-plra-accent-purple to-plra-accent-pink'>MARKSMANSHIP</span>",
+    subtitle: "Representing Pakistan Globally",
+    description: "Join our elite teams as we compete on the international stage, showcasing the skill and precision of Pakistani shooters to the world.",
+  }
+];
 
 export const HeroCarouselSection = () => {
-  const [slides, setSlides] = useState<any[]>([]);
-  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+  const { settings, loading } = useSiteSettings();
+  const slides = settings?.heroSlides?.length ? settings.heroSlides : FALLBACK_SLIDES;
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     duration: 30,
     skipSnaps: false
   }, [Autoplay({ delay: 7000, stopOnInteraction: false })]);
 
-  useEffect(() => {
-    fetch('/api/settings')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.data.heroSlides?.length > 0) {
-          setSlides(data.data.heroSlides);
-        } else {
-          // Fallback slides matching the "Marksmanship" style
-          setSlides([
-            {
-              imageBase64: "/hero_sec_img.png",
-              title: "PAKISTAN LONG <span class='text-transparent bg-clip-text bg-gradient-to-r from-plra-accent-purple to-plra-accent-pink'>RANGE RIFLE ASSOCIATION</span>",
-              subtitle: "Precision. Discipline. Excellence.",
-              description: "The national governing body for Full-bore rifle shooting in Pakistan, dedicated to fostering world-class marksmanship and international representation.",
-            },
-            {
-              imageBase64: "/1.jpeg",
-              title: "WORLD CLASS <span class='text-transparent bg-clip-text bg-gradient-to-r from-plra-accent-purple to-plra-accent-pink'>MARKSMANSHIP</span>",
-              subtitle: "Representing Pakistan Globally",
-              description: "Join our elite teams as we compete on the international stage, showcasing the skill and precision of Pakistani shooters to the world.",
-            }
-          ]);
-        }
-      });
-  }, []);
-
-  // Re-initialize Embla when slides are loaded asynchronously
   useEffect(() => {
     if (emblaApi) emblaApi.reInit();
   }, [emblaApi, slides]);
@@ -56,6 +48,7 @@ export const HeroCarouselSection = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
+  if (loading) return <HeroSkeleton />;
   if (slides.length === 0) return <div className="h-[85vh] bg-slate-950" />;
 
   return (

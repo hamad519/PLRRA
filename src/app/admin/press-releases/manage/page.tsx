@@ -8,6 +8,7 @@ import { FileText, Trash2, Download, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
 import { DocumentViewerModal } from '@/components/admin/DocumentViewerModal';
+import { downloadFile } from '@/lib/downloadFile';
 
 interface PressRelease {
   _id: string;
@@ -55,35 +56,10 @@ export default function ManagePressReleasesPage() {
     setViewerOpen(true);
   };
 
-  const downloadFile = (base64: string, fileName: string) => {
+  const handleDownload = (source: string, fileName: string) => {
     try {
-      const base64Parts = base64.split(',');
-      const mimeType = base64Parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-      const base64Data = base64Parts[1] || base64;
-      
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mimeType });
-      
-      let extension = '.pdf';
-      if (mimeType.includes('word') || mimeType.includes('officedocument')) {
-        extension = '.docx';
-      }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${fileName.replace(/[\\/:*?"<>|]/g, ' ')}${extension}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Download error:", error);
+      downloadFile(source, fileName);
+    } catch {
       toast.error("Could not download file.");
     }
   };
@@ -120,7 +96,7 @@ export default function ManagePressReleasesPage() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    onClick={() => downloadFile(release.pdfBase64, release.title)}
+                    onClick={() => handleDownload(release.pdfBase64, release.title)}
                     className="text-blue-500"
                     title="Download File"
                   >

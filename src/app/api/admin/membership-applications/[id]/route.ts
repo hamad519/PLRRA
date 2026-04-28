@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import MembershipApplication from '@/models/MembershipApplication';
+import prisma from '@/lib/prisma';
+import { parseId } from '@/lib/parseId';
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  await dbConnect();
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const numericId = parseId(id);
+  if (!numericId) return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
 
   try {
-    const deletedApplication = await MembershipApplication.findByIdAndDelete(id);
-
-    if (!deletedApplication) {
+    const deleted = await prisma.membershipApplication.delete({ where: { id: numericId } });
+    return NextResponse.json({ message: 'Membership application deleted successfully', applicationId: deleted.id }, { status: 200 });
+  } catch (error: any) {
+    if (error.code === 'P2025') {
       return NextResponse.json({ success: false, message: 'Membership application not found' }, { status: 404 });
     }
-
-    return NextResponse.json({ message: 'Membership application deleted successfully', applicationId: deletedApplication._id }, { status: 200 });
-  } catch (error: any) {
-    console.error('Delete membership application error:', error);
     return NextResponse.json({ success: false, message: 'Failed to delete membership application', error: error.message }, { status: 500 });
   }
 }

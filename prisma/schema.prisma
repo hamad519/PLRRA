@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------- USER --------------------------
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// -------------------------- EVENT --------------------------
+model Event {
+  id              Int      @id @default(autoincrement())
+  title           String
+  date            DateTime
+  location        String
+  mainImageBase64 String   @db.LongText
+  description     String   @default("") @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  registrations EventRegistration[]
+
+  @@index([date])
+  @@map("events")
+}
+
+// -------------------------- COMPETITION --------------------------
+model Competition {
+  id                   Int       @id @default(autoincrement())
+  title                String
+  fromDate             DateTime
+  toDate               DateTime
+  date                 DateTime?
+  location             String
+  mainImageBase64      String    @db.LongText
+  galleryImagesBase64  Json?
+  description          String    @default("") @db.Text
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([fromDate])
+  @@map("competitions")
+}
+
+// -------------------------- PRESS RELEASE --------------------------
+model PressRelease {
+  id        Int      @id @default(autoincrement())
+  title     String
+  date      DateTime @default(now())
+  pdfBase64 String   @db.LongText
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@map("press_releases")
+}
+
+// -------------------------- NATIONAL RECORD --------------------------
+model NationalRecord {
+  id        Int      @id @default(autoincrement())
+  year      Int
+  title     String
+  pdfBase64 String   @db.LongText
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([year])
+  @@map("national_records")
+}
+
+// -------------------------- PAST RESULT RECORD --------------------------
+model PastResultRecord {
+  id        Int      @id @default(autoincrement())
+  title     String
+  date      DateTime
+  location  String
+  matches   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@map("past_result_records")
+}
+
+// -------------------------- LATEST NEWS --------------------------
+model LatestNews {
+  id        Int      @id @default(autoincrement())
+  title     String
+  date      DateTime @default(now())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, date])
+  @@map("latest_news")
+}
+
+// -------------------------- EVENT REGISTRATION --------------------------
+model EventRegistration {
+  id                      Int      @id @default(autoincrement())
+  eventId                 Int
+  event                   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  firstName               String
+  lastName                String
+  fatherName              String
+  religion                String
+  dateOfBirth             DateTime
+  profession              String
+  addressLine1            String
+  city                    String
+  state                   String
+  phoneNo                 String
+  email                   String
+  cnicNo                  String
+  cnicCopyBase64          String   @db.LongText
+  passportNo              String?  @default("")
+  passportCopyBase64      String?  @db.LongText
+  weapons                 Json
+  weaponLicenseCopyBase64 String   @db.LongText
+  bankChallanCopyBase64   String   @db.LongText
+  status                  String   @default("pending")
+  submittedAt             DateTime @default(now())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([eventId])
+  @@map("event_registrations")
+}
+
+// -------------------------- MEMBERSHIP APPLICATION --------------------------
+model MembershipApplication {
+  id                      Int      @id @default(autoincrement())
+  membershipPlan          String
+  firstName               String
+  lastName                String
+  fatherName              String
+  religion                String
+  dateOfBirth             DateTime
+  profession              String
+  addressLine1            String
+  city                    String
+  state                   String
+  jobBusinessAddress      String   @db.Text
+  presentHomeAddress      String   @db.Text
+  permanentHomeAddress    String   @db.Text
+  cnicNo                  String
+  cnicCopyBase64          String   @db.LongText
+  passportNo              String?  @default("")
+  passportCopyBase64      String?  @db.LongText
+  phoneNo                 String
+  email                   String
+  weapons                 Json
+  weaponLicenseCopyBase64 String   @db.LongText
+  membershipFeeYear       String
+  bankChallanCopyBase64   String   @db.LongText
+  status                  String   @default("pending")
+  submittedAt             DateTime @default(now())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("membership_applications")
+}
+
+// -------------------------- TESTIMONIAL --------------------------
+model Testimonial {
+  id          Int      @id @default(autoincrement())
+  name        String
+  designation String   @default("")
+  message     String   @db.Text
+  imageUrl    String?  @db.Text
+  rating      Int      @default(5)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("testimonials")
+}
+
+// -------------------------- ACHIEVEMENT (International Ascendancy) ---
+model Achievement {
+  id        Int      @id @default(autoincrement())
+  year      String
+  title     String
+  subtitle  String   @default("")
+  details   Json // string[]
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("achievements")
+}
+
+// -------------------------- CONTRIBUTOR (Major Contributors) ---------
+model Contributor {
+  id            Int      @id @default(autoincrement())
+  name          String
+  role          String   @default("")
+  contributions Json // string[]
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("contributors")
+}
+
+// -------------------------- SITE SETTINGS --------------------------
+model SiteSettings {
+  id                Int      @id @default(autoincrement())
+  address           String   @default("Pakistan Long Range Rifle Association C/O Army Marksmanship Unit Jhelum Cantonment") @db.Text
+  contactNo         String   @default("0092-544-620081")
+  email             String   @default("plra.pakistan2022@gmail.com")
+  workingHours      String   @default("Monday to Friday: 7am – 7pm")
+  facebookLink      String   @default("https://facebook.com") @db.Text
+  instagramLink     String   @default("https://instagram.com") @db.Text
+  isMaintenanceMode Boolean  @default(false)
+  plraIntro         String   @default("") @db.Text
+  stats             Json?
+  championMoments   Json?
+  heroSlides        Json?
+  accountDetails    Json? // { bankName, accountTitle, accountNumber, iban, branchCode }
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("site_settings")
+}

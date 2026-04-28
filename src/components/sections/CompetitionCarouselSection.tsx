@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Reveal } from '@/components/animations/Reveal';
 import { format } from 'date-fns';
 import { CompetitionGalleryModal } from './CompetitionGalleryModal';
+import { CompetitionCarouselSkeleton } from '@/components/ui/PageSkeletons';
 
 interface Competition {
   _id: string;
@@ -82,13 +83,7 @@ export const CompetitionCarouselSection = () => {
   }, [emblaApi, competitions]);
 
   if (loading) {
-    return (
-      <section className="bg-white py-24 px-4 md:px-8">
-        <div className="container mx-auto flex justify-center items-center h-64">
-          <div className="w-10 h-10 border-4 border-plra-accent-purple border-t-transparent rounded-full animate-spin" />
-        </div>
-      </section>
-    );
+    return <CompetitionCarouselSkeleton />;
   }
 
   if (competitions.length === 0) {

@@ -8,6 +8,7 @@ import { CalendarDays, MapPin, FileText, Trophy, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Reveal } from '@/components/animations/Reveal';
+import { downloadFile } from '@/lib/downloadFile';
 
 interface MatchResult {
   name: string;
@@ -44,35 +45,10 @@ export const PastResultsRecordsContentSection = () => {
     fetchPastResults();
   }, []);
 
-  const downloadFile = (base64: string, fileName: string) => {
+  const handleDownload = (source: string, fileName: string) => {
     try {
-      const base64Parts = base64.split(',');
-      const mimeType = base64Parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-      const base64Data = base64Parts[1] || base64;
-      
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mimeType });
-      
-      let extension = '.pdf';
-      if (mimeType.includes('word') || mimeType.includes('officedocument')) {
-        extension = '.docx';
-      }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${fileName.replace(/[^a-z0-9]/gi, '_')}${extension}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Download error:", error);
+      downloadFile(source, fileName);
+    } catch {
       toast.error("Could not download file.");
     }
   };
@@ -138,7 +114,7 @@ export const PastResultsRecordsContentSection = () => {
                             <div className="flex flex-col gap-4">
                               {match.details && <p className="text-gray-600 leading-relaxed">{match.details}</p>}
                               <Button 
-                                onClick={() => downloadFile(match.pdfBase64, match.name)}
+                                onClick={() => handleDownload(match.pdfBase64, match.name)}
                                 className="bg-plra-black hover:bg-plra-accent-purple text-white font-bold px-6 py-4 rounded-xl flex items-center gap-2 transition-all w-fit"
                               >
                                 <Download size={18} /> Download Results PDF

@@ -20,7 +20,7 @@ import { Switch } from '@/components/ui/switch';
 const formSchema = z.object({
   title: z.string().min(3, "News title must be at least 3 characters"),
   date: z.date(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 export const AddLatestNewsForm = () => {

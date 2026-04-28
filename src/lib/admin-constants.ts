@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout, Rss } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout, Rss, MessageSquareQuote, Globe, Crown } from 'lucide-react';
 
 export const ADMIN_NAV_LINKS = [
   {
@@ -77,6 +77,33 @@ export const ADMIN_NAV_LINKS = [
     submenus: [
       { name: "Add New Plan", href: "/admin/membership-plans/add" },
       { name: "Manage Plans", href: "/admin/membership-plans/manage" },
+    ]
+  },
+  {
+    name: "Achievements",
+    href: "/admin/achievements",
+    icon: Globe,
+    submenus: [
+      { name: "Add Achievement", href: "/admin/achievements/add" },
+      { name: "Manage Achievements", href: "/admin/achievements/manage" },
+    ]
+  },
+  {
+    name: "Contributors",
+    href: "/admin/contributors",
+    icon: Crown,
+    submenus: [
+      { name: "Add Contributor", href: "/admin/contributors/add" },
+      { name: "Manage Contributors", href: "/admin/contributors/manage" },
+    ]
+  },
+  {
+    name: "Senior Members",
+    href: "/admin/testimonials",
+    icon: MessageSquareQuote,
+    submenus: [
+      { name: "Add Member", href: "/admin/testimonials/add" },
+      { name: "Manage Members", href: "/admin/testimonials/manage" },
     ]
   },
   {

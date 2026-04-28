@@ -1,23 +1,49 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Reveal } from '@/components/animations/Reveal';
 import { Trophy, Medal, Star, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const RecordsSection = () => {
-  const [data, setData] = useState<any>(null);
+  const { settings: data, loading } = useSiteSettings();
 
-  useEffect(() => {
-    fetch('/api/settings')
-      .then(res => res.json())
-      .then(resData => {
-        if (resData.success) setData(resData.data);
-      });
-  }, []);
+  if (loading) {
+    return (
+      <section className="py-24 px-4 md:px-8 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
+            <Skeleton className="h-4 w-40 mx-auto" />
+            <Skeleton className="h-12 w-[60%] mx-auto" />
+            <Skeleton className="h-4 w-[50%] mx-auto" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-plra-bg-soft rounded-3xl p-8 text-center space-y-3">
+                <Skeleton className="h-12 w-12 rounded-2xl mx-auto" />
+                <Skeleton className="h-10 w-20 mx-auto" />
+                <Skeleton className="h-4 w-28 mx-auto" />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-4 mb-8">
+            <Skeleton className="h-4 w-40 mx-auto" />
+            <Skeleton className="h-10 w-[35%] mx-auto" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="aspect-square rounded-3xl" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const stats = [
     { icon: Trophy, label: "National Records", value: data?.stats?.nationalRecords || "45+", color: "text-yellow-500" },

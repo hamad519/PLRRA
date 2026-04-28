@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import Competition from '@/models/Competition';
+import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
-  await dbConnect();
   try {
     const { title, fromDate, toDate, location, description, mainImageBase64, galleryImagesBase64 } = await req.json();
 
@@ -11,27 +9,43 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'Title, from date, to date, location, and main image are required' }, { status: 400 });
     }
 
-    const competition = await Competition.create({
-      title,
-      fromDate: new Date(fromDate),
-      toDate: new Date(toDate),
-      location,
-      description,
-      mainImageBase64,
-      galleryImagesBase64: galleryImagesBase64 || [],
+    const competition = await prisma.competition.create({
+      data: {
+        title,
+        fromDate: new Date(fromDate),
+        toDate: new Date(toDate),
+        location,
+        description: description || '',
+        mainImageBase64,
+        galleryImagesBase64: galleryImagesBase64 ?? [],
+      },
     });
 
-    return NextResponse.json({ message: 'Competition added successfully', competitionId: competition._id }, { status: 201 });
+    return NextResponse.json({ message: 'Competition added successfully', competitionId: competition.id }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 }
 
 export async function GET() {
-  await dbConnect();
   try {
-    const competitions = await Competition.find({}).sort({ fromDate: -1 });
-    return NextResponse.json({ success: true, data: competitions }, { status: 200 });
+    const competitions = await prisma.competition.findMany({
+      select: {
+        id: true,
+        title: true,
+        fromDate: true,
+        toDate: true,
+        date: true,
+        location: true,
+        mainImageBase64: true, // still a small path string — keep for list thumbnails
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { fromDate: 'desc' },
+    });
+    const data = competitions.map((c) => ({ ...c, _id: c.id }));
+    return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: 'Failed to fetch competitions', error: error.message }, { status: 500 });
   }

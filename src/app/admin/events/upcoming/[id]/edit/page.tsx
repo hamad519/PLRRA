@@ -1,16 +1,14 @@
 "use client";
 
-import React from 'react';
+import React, { use } from 'react';
 import { EditUpcomingEventForm } from '@/components/forms/EditUpcomingEventForm';
 
 interface EditUpcomingEventPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default function EditUpcomingEventPage({ params }: EditUpcomingEventPageProps) {
-  const { id } = params;
+  const { id } = use(params);
 
   return (
     <>
