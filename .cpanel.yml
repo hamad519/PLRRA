@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/plraorgp/plra-app/
+    - /bin/cp -R . $DEPLOYPATH
+    - cd $DEPLOYPATH
+    - /bin/touch tmp/restart.txt
