@@ -84,7 +84,7 @@ export default function AdminDashboardPage() {
 
         {/* Mini stat pills inside header */}
         {!loading && c && (
-          <div className="relative z-10 grid grid-cols-3 md:grid-cols-6 gap-3 mt-8">
+          <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-8">
             {[
               { label: "Users", value: c.totalUsers, icon: Users },
               { label: "Events", value: c.upcomingEvents, icon: CalendarDays },
@@ -119,7 +119,7 @@ export default function AdminDashboardPage() {
         <div className="col-span-12 lg:col-span-8 space-y-6">
 
           {/* Stat Cards Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-3 gap-3 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                     {[
                       { label: "Pending", value: c?.registrations.pending ?? 0, color: "bg-amber-500", bg: "bg-amber-50 border-amber-100" },
                       { label: "Approved", value: c?.registrations.approved ?? 0, color: "bg-emerald-500", bg: "bg-emerald-50 border-emerald-100" },
@@ -183,17 +183,17 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="space-y-1">
                     {data?.recentRegistrations?.map((reg) => (
-                      <div key={reg.id} className="flex items-center justify-between py-3 px-4 rounded-xl hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center gap-3">
+                      <div key={reg.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 px-4 rounded-xl hover:bg-slate-50 transition-colors gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center text-purple-600 font-black text-sm">
                             {reg.firstName.charAt(0)}
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-800">{reg.firstName} {reg.lastName}</p>
-                            <p className="text-[11px] text-slate-400">{reg.event?.title}</p>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-800 truncate">{reg.firstName} {reg.lastName}</p>
+                            <p className="text-[11px] text-slate-400 truncate">{reg.event?.title}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <div className="flex items-center gap-1.5">
                             <StatusDot status={reg.status} />
                             <span className={cn("text-[11px] font-bold capitalize",
@@ -304,7 +304,7 @@ export default function AdminDashboardPage() {
               <Zap size={16} className="text-admin-accent" />
               <h3 className="text-sm font-black text-slate-900">Quick Actions</h3>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {[
                 { label: "Event", href: "/admin/events/upcoming/add", icon: CalendarDays, color: "bg-purple-50 text-purple-600 hover:bg-purple-100" },
                 { label: "Competition", href: "/admin/competitions/add", icon: Trophy, color: "bg-amber-50 text-amber-600 hover:bg-amber-100" },

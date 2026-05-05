@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -27,14 +27,38 @@ const formSchema = z.object({
 });
 
 export const ContactForm = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: "", email: "", subject: "", message: "" },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast.success("Message sent successfully!");
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to send message");
+        return;
+      }
+
+      toast.success("Message sent successfully! We'll get back to you soon.");
+      form.reset();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -101,8 +125,13 @@ export const ContactForm = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-plra-black hover:bg-plra-black/90 text-white font-black py-8 rounded-2xl text-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-3 group">
-              Send Message <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full bg-plra-black hover:bg-plra-black/90 text-white font-black py-8 rounded-2xl text-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {isLoading ? 'Sending...' : 'Send Message'} 
+              <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
             </Button>
           </form>
         </Form>
