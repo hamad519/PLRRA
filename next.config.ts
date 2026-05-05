@@ -3,15 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: false,
 
-  serverExternalPackages: ["pdf-parse", "mammoth"],
+  serverExternalPackages: ["pdf-parse", "mammoth", "@prisma/client"],
 
   experimental: {
     serverActions: {
       bodySizeLimit: "500mb",
     },
   },
-
-  turbopack: {}, // 🔥 THIS FIXES YOUR ERROR
 
   webpack: (config, { dev }) => {
     if (dev) {
