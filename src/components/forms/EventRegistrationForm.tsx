@@ -60,7 +60,7 @@ const formSchema = z.object({
   cnicNo: z.string().regex(/^\d{5}-\d{7}-\d{1}$/, "Invalid CNIC format (e.g., 12345-1234567-1)"),
   cnicCopy: fileSchema,
   passportNo: z.string().optional(),
-  passportCopy: z.any().optional().refine((file) => !file?.length || file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`).refine(
+  passportCopy: z.any().optional().refine((file) => !file?.length || file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 2MB.`).refine(
     (file) => !file?.length || ACCEPTED_IMAGE_TYPES.includes(file?.[0]?.type),
     "Only .jpg, .jpeg, .png, .webp, and .pdf formats are supported."
   ),
