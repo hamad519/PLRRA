@@ -26,12 +26,12 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import { Reveal } from '@/components/animations/Reveal';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
 
 const fileSchema = z.any()
   .refine((file) => file?.length > 0, "File is required.")
-  .refine((file) => file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
+  .refine((file) => file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 10MB.`)
   .refine(
     (file) => ACCEPTED_IMAGE_TYPES.includes(file?.[0]?.type),
     "Only .jpg, .jpeg, .png, .webp, and .pdf formats are supported."
