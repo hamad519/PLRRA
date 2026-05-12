@@ -13,7 +13,7 @@ import { Upload, Trophy, FileText, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { uploadFile } from '@/lib/uploadFile';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ACCEPTED_FILE_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -25,7 +25,7 @@ const formSchema = z.object({
   title: z.string().min(3, "Title is required"),
   pdf: z.any()
     .refine((files) => files?.length > 0, "File is required")
-    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 10MB.`)
+    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 20MB.`)
     .refine(
       (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
       "Only .pdf and .docx formats are supported."
@@ -132,7 +132,7 @@ export const AddNationalRecordForm = () => {
                             <>
                               <Upload className="w-12 h-12 mb-3 text-gray-400 group-hover:text-admin-accent transition-colors" />
                               <p className="text-sm text-gray-500 font-bold">Click to upload</p>
-                              <p className="text-xs text-gray-400">PDF or DOCX only (Max 10MB)</p>
+                              <p className="text-xs text-gray-400">PDF or DOCX only (Max 20MB)</p>
                             </>
                           )}
                         </div>

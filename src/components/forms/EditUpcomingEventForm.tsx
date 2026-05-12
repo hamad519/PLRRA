@@ -26,11 +26,11 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { uploadImage } from '@/lib/uploadImage';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const fileSchema = z.any()
-  .refine((file) => !file || file.length === 0 || file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 10MB.`)
+  .refine((file) => !file || file.length === 0 || file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 20MB.`)
   .refine(
     (file) => !file || file.length === 0 || ACCEPTED_IMAGE_TYPES.includes(file?.[0]?.type),
     "Only .jpg, .jpeg, .png, .webp formats are supported."

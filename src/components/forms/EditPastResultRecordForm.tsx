@@ -25,11 +25,11 @@ import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { uploadFile } from '@/lib/uploadFile';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 120MB
 const ACCEPTED_PDF_TYPES = ["application/pdf"];
 
 const pdfFileSchema = z.any()
-  .refine((file) => !file || file.length === 0 || file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 10MB.`)
+  .refine((file) => !file || file.length === 0 || file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 20MB.`)
   .refine(
     (file) => !file || file.length === 0 || ACCEPTED_PDF_TYPES.includes(file?.[0]?.type),
     "Only .pdf format is supported."
