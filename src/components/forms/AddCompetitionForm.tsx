@@ -36,7 +36,7 @@ const fileSchema = z.any()
   );
 
 const multipleFilesSchema = z.array(z.any())
-  .refine((files) => files.every(file => file.size <= MAX_FILE_SIZE), `Max file size for each image is 5MB.`)
+  .refine((files) => files.every(file => file.size <= MAX_FILE_SIZE), `Max file size for each image is 20MB.`)
   .refine(
     (files) => files.every(file => ACCEPTED_IMAGE_TYPES.includes(file.type)),
     "Only .jpg, .jpeg, .png, .webp formats are supported for gallery images."
@@ -271,7 +271,7 @@ export const AddCompetitionForm = () => {
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                           <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
                           <p className="mb-2 text-sm text-admin-text-secondary"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                          <p className="text-xs text-admin-text-secondary">PNG, JPG, WEBP (MAX. 5MB)</p>
+                          <p className="text-xs text-admin-text-secondary">PNG, JPG, WEBP (MAX. 20MB)</p>
                           {value?.[0] && <p className="text-xs text-admin-accent mt-1">{value[0].name}</p>}
                         </div>
                         <Input
@@ -315,7 +315,7 @@ export const AddCompetitionForm = () => {
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                           <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
                           <p className="mb-2 text-sm text-admin-text-secondary"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                          <p className="text-xs text-admin-text-secondary">PNG, JPG, WEBP (MAX. 5MB each)</p>
+                          <p className="text-xs text-admin-text-secondary">PNG, JPG, WEBP (MAX. 20MB each)</p>
                           {value && value.length > 0 && (
                             <p className="text-xs text-admin-accent mt-1">{value.length} file(s) selected</p>
                           )}

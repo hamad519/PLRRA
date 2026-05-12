@@ -63,7 +63,7 @@ const formSchema = z.object({
   cnicNo: z.string().regex(/^\d{5}-\d{7}-\d{1}$/, "Invalid CNIC format (e.g., 12345-1234567-1)"),
   cnicCopy: fileSchema,
   passportNo: z.string().optional(),
-  passportCopy: z.any().optional().refine((file) => !file?.length || file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`).refine(
+  passportCopy: z.any().optional().refine((file) => !file?.length || file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 20MB.`).refine(
     (file) => !file?.length || ACCEPTED_IMAGE_TYPES.includes(file?.[0]?.type),
     "Only .jpg, .jpeg, .png, .webp, and .pdf formats are supported."
   ),
@@ -473,7 +473,7 @@ export const JoinNowForm = () => {
                                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                     <Upload className="w-10 h-10 mb-3 text-gray-400 group-hover:text-plra-accent-purple transition-colors" />
                                     <p className="mb-2 text-sm text-gray-500 font-bold">Click to upload CNIC</p>
-                                    <p className="text-xs text-gray-400">PNG, JPG, PDF (MAX. 5MB)</p>
+                                    <p className="text-xs text-gray-400">PNG, JPG, PDF (MAX. 20MB)</p>
                                     {value?.[0] && <p className="text-xs text-plra-accent-purple mt-2 font-black">{value[0].name}</p>}
                                   </div>
                                   <Input type="file" className="hidden" {...fieldProps} onChange={(e) => onChange(e.target.files)} />
@@ -511,7 +511,7 @@ export const JoinNowForm = () => {
                                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                     <Upload className="w-10 h-10 mb-3 text-gray-400 group-hover:text-plra-accent-purple transition-colors" />
                                     <p className="mb-2 text-sm text-gray-500 font-bold">Click to upload Passport</p>
-                                    <p className="text-xs text-gray-400">PNG, JPG, PDF (MAX. 5MB)</p>
+                                    <p className="text-xs text-gray-400">PNG, JPG, PDF (MAX. 20MB)</p>
                                     {value?.[0] && <p className="text-xs text-plra-accent-purple mt-2 font-black">{value[0].name}</p>}
                                   </div>
                                   <Input type="file" className="hidden" {...fieldProps} onChange={(e) => onChange(e.target.files)} />
@@ -631,7 +631,7 @@ export const JoinNowForm = () => {
                               <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                 <Upload className="w-10 h-10 mb-3 text-gray-400 group-hover:text-plra-accent-purple transition-colors" />
                                 <p className="mb-2 text-sm text-gray-500 font-bold">Click to upload License</p>
-                                <p className="text-xs text-gray-400">PNG, JPG, PDF (MAX. 5MB)</p>
+                                <p className="text-xs text-gray-400">PNG, JPG, PDF (MAX. 20MB)</p>
                                 {value?.[0] && <p className="text-xs text-plra-accent-purple mt-2 font-black">{value[0].name}</p>}
                               </div>
                               <Input type="file" className="hidden" {...fieldProps} onChange={(e) => onChange(e.target.files)} />
@@ -683,7 +683,7 @@ export const JoinNowForm = () => {
                               <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                 <Upload className="w-10 h-10 mb-3 text-gray-400 group-hover:text-plra-accent-purple transition-colors" />
                                 <p className="mb-2 text-sm text-gray-500 font-bold">Click to upload Proof</p>
-                                <p className="text-xs text-gray-400">PNG, JPG, PDF (MAX. 5MB)</p>
+                                <p className="text-xs text-gray-400">PNG, JPG, PDF (MAX. 20MB)</p>
                                 {value?.[0] && <p className="text-xs text-plra-accent-purple mt-2 font-black">{value[0].name}</p>}
                               </div>
                               <Input type="file" className="hidden" {...fieldProps} onChange={(e) => onChange(e.target.files)} />
