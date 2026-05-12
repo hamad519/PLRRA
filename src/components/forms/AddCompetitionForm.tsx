@@ -24,12 +24,12 @@ import { useRouter } from 'next/navigation';
 import { AdminDatePicker } from '@/components/ui/AdminDatePicker';
 import { uploadImage } from '@/lib/uploadImage';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const fileSchema = z.any()
   .refine((file) => file?.length > 0, "Main image is required.") // Made required
-  .refine((file) => file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 10MB.`)
+  .refine((file) => file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 20MB.`)
   .refine(
     (file) => ACCEPTED_IMAGE_TYPES.includes(file?.[0]?.type),
     "Only .jpg, .jpeg, .png, .webp formats are supported."

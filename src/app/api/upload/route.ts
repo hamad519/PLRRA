@@ -13,7 +13,7 @@ const DOCUMENT_TYPES = [
 ];
 const ALLOWED_TYPES = [...IMAGE_TYPES, ...DOCUMENT_TYPES];
 
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB for images
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024; // 20 MB for images
 const MAX_DOC_BYTES = 25 * 1024 * 1024; // 25 MB for PDFs / DOCX
 
 function extFromMime(mime: string): string {
