@@ -118,6 +118,35 @@
   font-weight: 800;
 }
 
+.admin-datepicker .react-datepicker__header__dropdown select,
+.admin-datepicker .react-datepicker__month-select,
+.admin-datepicker .react-datepicker__year-select {
+  background-color: #1e2a3a;
+  color: #f59e0b;
+  border: 1px solid #2d3f55;
+  border-radius: 0.5rem;
+  padding: 4px 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin: 0 4px;
+}
+
+.admin-datepicker .react-datepicker__header__dropdown select:focus,
+.admin-datepicker .react-datepicker__month-select:focus,
+.admin-datepicker .react-datepicker__year-select:focus {
+  outline: none;
+  border-color: #f59e0b;
+}
+
+.admin-datepicker .react-datepicker__header__dropdown select option,
+.admin-datepicker .react-datepicker__month-select option,
+.admin-datepicker .react-datepicker__year-select option {
+  background-color: #1e2a3a;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
 .admin-datepicker .react-datepicker__day-name {
   color: #94a3b8;
   font-weight: 700;
