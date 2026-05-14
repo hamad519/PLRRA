@@ -58,7 +58,8 @@ interface EditPastResultRecordFormProps {
 export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormProps) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [pdfPreviews, setPdfPreviews] = useState<Record<number, string | null>>({});
+  // Pending PDF files keyed by useFieldArray field.id (stable across reorders)
+  const [pendingPdfs, setPendingPdfs] = useState<Record<string, File>>({});
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,15 +81,12 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
         const data = await res.json();
         if (data.success) {
           const record = data.data;
-          const initialMatches = record.matches.map((match: any, index: number) => {
-            setPdfPreviews((prev) => ({ ...prev, [index]: match.pdfBase64 }));
-            return {
-              name: match.name,
-              pdf: undefined,
-              pdfBase64: match.pdfBase64,
-              details: match.details,
-            };
-          });
+          const initialMatches = record.matches.map((match: any) => ({
+            name: match.name,
+            pdf: undefined,
+            pdfBase64: match.pdfBase64,
+            details: match.details,
+          }));
 
           form.reset({
             title: record.title,
@@ -114,37 +112,39 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
     }
   }, [recordId, form, router]);
 
-  const convertFileToBase64 = (file: File): Promise<string> =>
-    uploadFile(file, 'past-results');
-
-  const handlePdfChange = async (
+  const handlePdfChange = (
     event: React.ChangeEvent<HTMLInputElement>,
     onChange: (...event: any[]) => void,
     index: number
   ) => {
+    const fieldId = fields[index]?.id;
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-      try {
-        const url = await uploadFile(file, 'past-results');
-        setPdfPreviews((prev) => ({ ...prev, [index]: url }));
-        form.setValue(`matches.${index}.pdfBase64`, url);
-        onChange(event.target.files);
-      } catch (err: any) {
-        toast.error(err.message || 'Failed to upload document');
+      if (fieldId) {
+        setPendingPdfs((prev) => ({ ...prev, [fieldId]: file }));
       }
+      onChange(event.target.files);
     } else {
-      const currentMatch = form.getValues(`matches.${index}`);
-      setPdfPreviews((prev) => ({ ...prev, [index]: currentMatch.pdfBase64 || null }));
+      if (fieldId) {
+        setPendingPdfs((prev) => {
+          const next = { ...prev };
+          delete next[fieldId];
+          return next;
+        });
+      }
       onChange(null);
     }
   };
 
   const removePdf = (index: number) => {
-    setPdfPreviews((prev) => {
-      const newPreviews = { ...prev };
-      delete newPreviews[index];
-      return newPreviews;
-    });
+    const fieldId = fields[index]?.id;
+    if (fieldId) {
+      setPendingPdfs((prev) => {
+        const next = { ...prev };
+        delete next[fieldId];
+        return next;
+      });
+    }
     form.setValue(`matches.${index}.pdf`, undefined);
     form.setValue(`matches.${index}.pdfBase64`, undefined);
     const input = document.getElementById(`match-${index}-pdf-upload`) as HTMLInputElement;
@@ -154,26 +154,33 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const matchesWithBase64 = await Promise.all(
-        values.matches.map(async (match, index) => {
-          // pdfBase64 was set (to a URL path) when the file was selected, so use it directly
-          let finalPdfBase64: string | undefined = match.pdfBase64;
+      const matchesWithBase64: { name: string; pdfBase64: string; details?: string }[] = [];
+      for (let index = 0; index < values.matches.length; index++) {
+        const match = values.matches[index];
+        const fieldId = fields[index]?.id;
+        const pendingFile = fieldId ? pendingPdfs[fieldId] : undefined;
 
-          if (pdfPreviews[index] === null) {
-            finalPdfBase64 = undefined;
+        let finalPdfBase64: string | undefined;
+        if (pendingFile) {
+          try {
+            finalPdfBase64 = await uploadFile(pendingFile, 'past-results');
+          } catch (err: any) {
+            throw new Error(`Failed to upload PDF for "${match.name}": ${err?.message || 'unknown error'}`);
           }
+        } else {
+          finalPdfBase64 = match.pdfBase64;
+        }
 
-          if (!finalPdfBase64) {
-            throw new Error(`PDF for match "${match.name}" is required.`);
-          }
+        if (!finalPdfBase64) {
+          throw new Error(`PDF for match "${match.name}" is required.`);
+        }
 
-          return {
-            name: match.name,
-            pdfBase64: finalPdfBase64,
-            details: match.details,
-          };
-        })
-      );
+        matchesWithBase64.push({
+          name: match.name,
+          pdfBase64: finalPdfBase64,
+          details: match.details,
+        });
+      }
 
       const payload = {
         title: values.title,
@@ -194,6 +201,7 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
 
       if (res.ok) {
         toast.success(data.message || "Past result/record updated successfully!");
+        setPendingPdfs({});
         router.push('/admin/events/past-results-records/manage');
       } else {
         toast.error(data.message || 'Failed to update past result/record.');
@@ -291,7 +299,11 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
 
             <div className="space-y-4">
               <h3 className="text-2xl font-bold text-admin-accent border-b border-admin-border pb-2 mb-4">Match Results</h3>
-              {fields.map((item, index) => (
+              {fields.map((item, index) => {
+                const hasPending = !!pendingPdfs[item.id];
+                const existingPdf = form.watch(`matches.${index}.pdfBase64`);
+                const hasPdf = hasPending || !!existingPdf;
+                return (
                 <Card key={item.id} className="bg-admin-card-bg/50 border border-admin-border p-6 relative">
                   <CardContent className="p-0 space-y-4">
                     <FormField
@@ -318,13 +330,15 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
                               <label htmlFor={`match-${index}-pdf-upload`} className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-admin-input-bg border-admin-input-border hover:border-admin-accent transition-colors">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                   <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
-                                  <p className="mb-2 text-sm text-admin-text-secondary"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                                  <p className="mb-2 text-sm text-admin-text-secondary"><span className="font-semibold">Click to select</span> or drag and drop</p>
                                   <p className="text-xs text-admin-text-secondary">PDF (MAX. 20MB)</p>
                                   {value?.[0] && <p className="text-xs text-admin-accent mt-1">{value[0].name}</p>}
+                                  <p className="text-xs text-admin-text-secondary mt-1">Uploads when you click Update</p>
                                 </div>
                                 <Input
                                   id={`match-${index}-pdf-upload`}
                                   type="file"
+                                  accept="application/pdf"
                                   className="hidden"
                                   {...fieldProps}
                                   onChange={(e) => handlePdfChange(e, onChange, index)}
@@ -333,7 +347,7 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
                             </div>
                           </FormControl>
                           <FormMessage />
-                          {pdfPreviews[index] && (
+                          {hasPdf && (
                             <div className="relative w-32 h-20 mt-2 rounded-md overflow-hidden border border-admin-border flex items-center justify-center bg-gray-100">
                               <FileText className="h-10 w-10 text-red-500" />
                               <Button
@@ -376,7 +390,8 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
                     </Button>
                   )}
                 </Card>
-              ))}
+                );
+              })}
               <Button
                 type="button"
                 variant="outline"
@@ -388,7 +403,7 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
             </div>
 
             <Button type="submit" variant="default" className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading}>
-              {isLoading ? 'Updating...' : 'Update Past Result / Record'}
+              {isLoading ? 'Uploading & saving...' : 'Update Past Result / Record'}
             </Button>
           </form>
         </Form>

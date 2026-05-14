@@ -46,14 +46,17 @@ const formSchema = z.object({
   description: z.string().optional(),
 });
 
-type MediaItem = { type: 'image' | 'video'; url: string };
+type GalleryItem = {
+  type: 'image' | 'video';
+  file: File;
+  previewUrl: string; // object URL for local preview
+};
 
 export const AddCompetitionForm = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
-  const [galleryMedia, setGalleryMedia] = useState<MediaItem[]>([]);
-  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [galleryMedia, setGalleryMedia] = useState<GalleryItem[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -93,41 +96,33 @@ export const AddCompetitionForm = () => {
     }
   };
 
-  const handleGalleryMediaChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryMediaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) return;
     const files = Array.from(event.target.files);
-    setUploadingMedia(true);
-    try {
-      const uploaded: MediaItem[] = [];
-      for (const file of files) {
-        const isVideo = ACCEPTED_VIDEO_TYPES.includes(file.type);
-        const isImage = ACCEPTED_IMAGE_TYPES.includes(file.type);
-        if (!isImage && !isVideo) {
-          toast.error(`Unsupported file type: ${file.name}`);
-          continue;
-        }
-        if (isVideo && file.size > MAX_VIDEO_SIZE) {
-          toast.error(`Video too large (max 25MB): ${file.name}`);
-          continue;
-        }
-        if (isImage && file.size > MAX_IMAGE_SIZE) {
-          toast.error(`Image too large (max 20MB): ${file.name}`);
-          continue;
-        }
-        const url = await uploadImage(file, {
-          folder: 'competitions',
-          maxSizeMB: 0.25,
-          maxWidthOrHeight: 1280,
-        });
-        uploaded.push({ type: isVideo ? 'video' : 'image', url });
+    const added: GalleryItem[] = [];
+    for (const file of files) {
+      const isVideo = ACCEPTED_VIDEO_TYPES.includes(file.type);
+      const isImage = ACCEPTED_IMAGE_TYPES.includes(file.type);
+      if (!isImage && !isVideo) {
+        toast.error(`Unsupported file type: ${file.name}`);
+        continue;
       }
-      setGalleryMedia(prev => [...prev, ...uploaded]);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to upload media');
-    } finally {
-      setUploadingMedia(false);
-      event.target.value = '';
+      if (isVideo && file.size > MAX_VIDEO_SIZE) {
+        toast.error(`Video too large (max 25MB): ${file.name}`);
+        continue;
+      }
+      if (isImage && file.size > MAX_IMAGE_SIZE) {
+        toast.error(`Image too large (max 20MB): ${file.name}`);
+        continue;
+      }
+      added.push({
+        type: isVideo ? 'video' : 'image',
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
     }
+    setGalleryMedia(prev => [...prev, ...added]);
+    event.target.value = '';
   };
 
   const removeMainImage = () => {
@@ -138,8 +133,20 @@ export const AddCompetitionForm = () => {
   };
 
   const removeGalleryMedia = (indexToRemove: number) => {
-    setGalleryMedia(prev => prev.filter((_, index) => index !== indexToRemove));
+    setGalleryMedia(prev => {
+      const removed = prev[indexToRemove];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, index) => index !== indexToRemove);
+    });
   };
+
+  React.useEffect(() => {
+    return () => {
+      // Revoke any remaining object URLs on unmount
+      galleryMedia.forEach((m) => URL.revokeObjectURL(m.previewUrl));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -147,6 +154,16 @@ export const AddCompetitionForm = () => {
       const mainImageBase64 = values.mainImage && values.mainImage.length > 0
         ? await uploadCompetitionImage(values.mainImage[0], true)
         : undefined;
+
+      const uploadedGallery: { type: 'image' | 'video'; url: string }[] = [];
+      for (const item of galleryMedia) {
+        const url = await uploadImage(item.file, {
+          folder: 'competitions',
+          maxSizeMB: 0.25,
+          maxWidthOrHeight: 1280,
+        });
+        uploadedGallery.push({ type: item.type, url });
+      }
 
       const payload = {
         title: values.title,
@@ -156,7 +173,7 @@ export const AddCompetitionForm = () => {
         description: values.description,
         mainImageBase64,
         galleryImagesBase64: [],
-        galleryMedia,
+        galleryMedia: uploadedGallery,
       };
 
       const res = await fetch('/api/admin/competitions', {
@@ -169,6 +186,7 @@ export const AddCompetitionForm = () => {
 
       if (res.ok) {
         toast.success(data.message || "Competition added successfully!");
+        galleryMedia.forEach((m) => URL.revokeObjectURL(m.previewUrl));
         form.reset();
         setMainImagePreview(null);
         setGalleryMedia([]);
@@ -176,9 +194,9 @@ export const AddCompetitionForm = () => {
       } else {
         toast.error(data.message || 'Failed to add competition.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Add competition error:', error);
-      toast.error('Network error or server unreachable.');
+      toast.error(error?.message || 'Network error or server unreachable.');
     } finally {
       setIsLoading(false);
     }
@@ -313,9 +331,10 @@ export const AddCompetitionForm = () => {
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
                     <p className="mb-2 text-sm text-admin-text-secondary">
-                      <span className="font-semibold">{uploadingMedia ? 'Uploading…' : 'Click to upload'}</span> images and videos
+                      <span className="font-semibold">Click to select</span> images and videos
                     </p>
                     <p className="text-xs text-admin-text-secondary">Images: PNG/JPG/WEBP (20MB) • Videos: MP4/WEBM/MOV (25MB)</p>
+                    <p className="text-xs text-admin-text-secondary mt-1">Files upload when you click Add Competition</p>
                   </div>
                   <Input
                     id="gallery-media-upload"
@@ -323,7 +342,6 @@ export const AddCompetitionForm = () => {
                     multiple
                     accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/webm,video/ogg,video/quicktime"
                     className="hidden"
-                    disabled={uploadingMedia}
                     onChange={handleGalleryMediaChange}
                   />
                 </label>
@@ -333,10 +351,10 @@ export const AddCompetitionForm = () => {
                   {galleryMedia.map((item, index) => (
                     <div key={index} className="relative w-full h-20 rounded-md overflow-hidden border border-admin-border bg-black">
                       {item.type === 'image' ? (
-                        <Image src={item.url} alt={`Media ${index + 1}`} layout="fill" objectFit="cover" unoptimized />
+                        <Image src={item.previewUrl} alt={`Media ${index + 1}`} layout="fill" objectFit="cover" unoptimized />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-white">
-                          <video src={item.url} className="absolute inset-0 w-full h-full object-cover" muted />
+                          <video src={item.previewUrl} className="absolute inset-0 w-full h-full object-cover" muted />
                           <PlayCircle className="relative h-8 w-8 text-white drop-shadow-lg" />
                         </div>
                       )}
@@ -371,8 +389,8 @@ export const AddCompetitionForm = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit" variant="default" className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading || uploadingMedia}>
-              {isLoading ? 'Adding...' : 'Add Competition'}
+            <Button type="submit" variant="default" className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading}>
+              {isLoading ? 'Uploading & saving...' : 'Add Competition'}
             </Button>
           </form>
         </Form>

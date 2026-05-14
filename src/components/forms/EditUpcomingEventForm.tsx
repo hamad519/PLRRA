@@ -53,8 +53,9 @@ interface EditUpcomingEventFormProps {
 export const EditUpcomingEventForm = ({ eventId }: EditUpcomingEventFormProps) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [initialMainImageBase64, setInitialMainImageBase64] = useState<string | null>(null);
-  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
+  const [existingMainImageUrl, setExistingMainImageUrl] = useState<string | null>(null);
+  const [pendingMainImageFile, setPendingMainImageFile] = useState<File | null>(null);
+  const [pendingMainImagePreview, setPendingMainImagePreview] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -76,18 +77,17 @@ export const EditUpcomingEventForm = ({ eventId }: EditUpcomingEventFormProps) =
             date: new Date(event.date),
             location: event.location,
             description: event.description,
-            mainImage: undefined, // Clear file input for new upload
+            mainImage: undefined,
           });
-          setInitialMainImageBase64(event.mainImageBase64 || null);
-          setMainImagePreview(event.mainImageBase64 || null);
+          setExistingMainImageUrl(event.mainImageBase64 || null);
         } else {
           toast.error(data.message || 'Failed to fetch event details.');
-          router.push('/admin/events/upcoming/manage'); // Redirect if not found
+          router.push('/admin/events/upcoming/manage');
         }
       } catch (err: any) {
         console.error('Fetch event error:', err);
         toast.error(`Error: ${err.message}`);
-        router.push('/admin/events/upcoming/manage'); // Redirect on error
+        router.push('/admin/events/upcoming/manage');
       } finally {
         setIsLoading(false);
       }
@@ -98,29 +98,34 @@ export const EditUpcomingEventForm = ({ eventId }: EditUpcomingEventFormProps) =
     }
   }, [eventId, form, router]);
 
-  const uploadEventImage = (file: File): Promise<string> =>
-    uploadImage(file, { folder: 'events', maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
+  useEffect(() => {
+    return () => {
+      if (pendingMainImagePreview) URL.revokeObjectURL(pendingMainImagePreview);
+    };
+  }, [pendingMainImagePreview]);
 
-  const handleMainImageChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
+  const mainImagePreview = pendingMainImagePreview ?? existingMainImageUrl;
+
+  const handleMainImageChange = (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-      try {
-        const url = await uploadEventImage(file);
-        setMainImagePreview(url);
-        setInitialMainImageBase64(url);
-        onChange(event.target.files);
-      } catch (err: any) {
-        toast.error(err.message || 'Failed to upload image');
-      }
+      if (pendingMainImagePreview) URL.revokeObjectURL(pendingMainImagePreview);
+      setPendingMainImageFile(file);
+      setPendingMainImagePreview(URL.createObjectURL(file));
+      onChange(event.target.files);
     } else {
-      setMainImagePreview(initialMainImageBase64);
+      if (pendingMainImagePreview) URL.revokeObjectURL(pendingMainImagePreview);
+      setPendingMainImageFile(null);
+      setPendingMainImagePreview(null);
       onChange(null);
     }
   };
 
   const removeMainImage = () => {
-    setMainImagePreview(null);
-    setInitialMainImageBase64(null); // Also clear initial
+    if (pendingMainImagePreview) URL.revokeObjectURL(pendingMainImagePreview);
+    setPendingMainImageFile(null);
+    setPendingMainImagePreview(null);
+    setExistingMainImageUrl(null);
     form.setValue('mainImage', null);
     const input = document.getElementById('main-image-upload') as HTMLInputElement;
     if (input) input.value = '';
@@ -129,8 +134,20 @@ export const EditUpcomingEventForm = ({ eventId }: EditUpcomingEventFormProps) =
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      // mainImagePreview already holds either the initial DB URL or the freshly uploaded URL
-      const finalMainImageBase64 = mainImagePreview;
+      let finalMainImageBase64: string | null = existingMainImageUrl;
+      if (pendingMainImageFile) {
+        try {
+          finalMainImageBase64 = await uploadImage(pendingMainImageFile, {
+            folder: 'events',
+            maxSizeMB: 0.5,
+            maxWidthOrHeight: 1920,
+          });
+        } catch (err: any) {
+          toast.error(err.message || 'Failed to upload image');
+          setIsLoading(false);
+          return;
+        }
+      }
 
       if (!finalMainImageBase64) {
         toast.error("Main image is required.");
