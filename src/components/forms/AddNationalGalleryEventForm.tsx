@@ -41,14 +41,17 @@ const formSchema = z.object({
   mainImage: mainImageSchema,
 });
 
-type MediaItem = { type: 'image' | 'video'; url: string };
+type GalleryItem = {
+  type: 'image' | 'video';
+  file: File;
+  previewUrl: string;
+};
 
 export const AddNationalGalleryEventForm = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
-  const [galleryMedia, setGalleryMedia] = useState<MediaItem[]>([]);
-  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [galleryMedia, setGalleryMedia] = useState<GalleryItem[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,42 +81,33 @@ export const AddNationalGalleryEventForm = () => {
     }
   };
 
-  const handleGalleryMediaChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryMediaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) return;
-
     const files = Array.from(event.target.files);
-    setUploadingMedia(true);
-    try {
-      const uploaded: MediaItem[] = [];
-      for (const file of files) {
-        const isVideo = ACCEPTED_VIDEO_TYPES.includes(file.type);
-        const isImage = ACCEPTED_IMAGE_TYPES.includes(file.type);
-        if (!isImage && !isVideo) {
-          toast.error(`Unsupported file type: ${file.name}`);
-          continue;
-        }
-        if (isVideo && file.size > MAX_VIDEO_SIZE) {
-          toast.error(`Video too large (max 25MB): ${file.name}`);
-          continue;
-        }
-        if (isImage && file.size > MAX_IMAGE_SIZE) {
-          toast.error(`Image too large (max 20MB): ${file.name}`);
-          continue;
-        }
-        const url = await uploadImage(file, {
-          folder: 'national-gallery',
-          maxSizeMB: 0.5,
-          maxWidthOrHeight: 1920,
-        });
-        uploaded.push({ type: isVideo ? 'video' : 'image', url });
+    const added: GalleryItem[] = [];
+    for (const file of files) {
+      const isVideo = ACCEPTED_VIDEO_TYPES.includes(file.type);
+      const isImage = ACCEPTED_IMAGE_TYPES.includes(file.type);
+      if (!isImage && !isVideo) {
+        toast.error(`Unsupported file type: ${file.name}`);
+        continue;
       }
-      setGalleryMedia((prev) => [...prev, ...uploaded]);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to upload media');
-    } finally {
-      setUploadingMedia(false);
-      event.target.value = '';
+      if (isVideo && file.size > MAX_VIDEO_SIZE) {
+        toast.error(`Video too large (max 25MB): ${file.name}`);
+        continue;
+      }
+      if (isImage && file.size > MAX_IMAGE_SIZE) {
+        toast.error(`Image too large (max 20MB): ${file.name}`);
+        continue;
+      }
+      added.push({
+        type: isVideo ? 'video' : 'image',
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
     }
+    setGalleryMedia((prev) => [...prev, ...added]);
+    event.target.value = '';
   };
 
   const removeMainImage = () => {
@@ -124,8 +118,19 @@ export const AddNationalGalleryEventForm = () => {
   };
 
   const removeGalleryMedia = (indexToRemove: number) => {
-    setGalleryMedia((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setGalleryMedia((prev) => {
+      const removed = prev[indexToRemove];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, index) => index !== indexToRemove);
+    });
   };
+
+  React.useEffect(() => {
+    return () => {
+      galleryMedia.forEach((m) => URL.revokeObjectURL(m.previewUrl));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -136,11 +141,21 @@ export const AddNationalGalleryEventForm = () => {
         maxWidthOrHeight: 1920,
       });
 
+      const uploadedGallery: { type: 'image' | 'video'; url: string }[] = [];
+      for (const item of galleryMedia) {
+        const url = await uploadImage(item.file, {
+          folder: 'national-gallery',
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 1920,
+        });
+        uploadedGallery.push({ type: item.type, url });
+      }
+
       const payload = {
         title: values.title,
         date: values.date.toISOString(),
         mainImageBase64,
-        galleryMedia,
+        galleryMedia: uploadedGallery,
       };
 
       const res = await fetch('/api/admin/national-gallery', {
@@ -153,6 +168,7 @@ export const AddNationalGalleryEventForm = () => {
 
       if (res.ok) {
         toast.success(data.message || 'Gallery event added successfully!');
+        galleryMedia.forEach((m) => URL.revokeObjectURL(m.previewUrl));
         form.reset();
         setMainImagePreview(null);
         setGalleryMedia([]);
@@ -285,14 +301,12 @@ export const AddNationalGalleryEventForm = () => {
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
                     <p className="mb-2 text-sm text-admin-text-secondary">
-                      <span className="font-semibold">
-                        {uploadingMedia ? 'Uploading…' : 'Click to upload'}
-                      </span>{' '}
-                      images and videos
+                      <span className="font-semibold">Click to select</span> images and videos
                     </p>
                     <p className="text-xs text-admin-text-secondary">
                       Images: PNG/JPG/WEBP (20MB) • Videos: MP4/WEBM/MOV (25MB)
                     </p>
+                    <p className="text-xs text-admin-text-secondary mt-1">Files upload when you click Add Gallery Event</p>
                   </div>
                   <Input
                     id="ng-gallery-media-upload"
@@ -300,7 +314,6 @@ export const AddNationalGalleryEventForm = () => {
                     multiple
                     accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/webm,video/ogg,video/quicktime"
                     className="hidden"
-                    disabled={uploadingMedia}
                     onChange={handleGalleryMediaChange}
                   />
                 </label>
@@ -314,7 +327,7 @@ export const AddNationalGalleryEventForm = () => {
                     >
                       {item.type === 'image' ? (
                         <Image
-                          src={item.url}
+                          src={item.previewUrl}
                           alt={`Media ${index + 1}`}
                           layout="fill"
                           objectFit="cover"
@@ -322,7 +335,7 @@ export const AddNationalGalleryEventForm = () => {
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-white">
-                          <video src={item.url} className="absolute inset-0 w-full h-full object-cover" muted />
+                          <video src={item.previewUrl} className="absolute inset-0 w-full h-full object-cover" muted />
                           <PlayCircle className="relative h-8 w-8 text-white drop-shadow-lg" />
                         </div>
                       )}
@@ -345,9 +358,9 @@ export const AddNationalGalleryEventForm = () => {
               type="submit"
               variant="default"
               className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90"
-              disabled={isLoading || uploadingMedia}
+              disabled={isLoading}
             >
-              {isLoading ? 'Adding...' : 'Add Gallery Event'}
+              {isLoading ? 'Uploading & saving...' : 'Add Gallery Event'}
             </Button>
           </form>
         </Form>

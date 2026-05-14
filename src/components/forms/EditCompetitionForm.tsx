@@ -45,7 +45,9 @@ const formSchema = z.object({
   description: z.string().optional(),
 });
 
-type MediaItem = { type: 'image' | 'video'; url: string };
+type GalleryItem =
+  | { kind: 'existing'; type: 'image' | 'video'; url: string }
+  | { kind: 'pending'; type: 'image' | 'video'; file: File; previewUrl: string };
 
 interface EditCompetitionFormProps {
   competitionId: string;
@@ -54,10 +56,10 @@ interface EditCompetitionFormProps {
 export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [initialMainImageBase64, setInitialMainImageBase64] = useState<string | null>(null);
-  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
-  const [galleryMedia, setGalleryMedia] = useState<MediaItem[]>([]);
-  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [existingMainImageUrl, setExistingMainImageUrl] = useState<string | null>(null);
+  const [pendingMainImageFile, setPendingMainImageFile] = useState<File | null>(null);
+  const [pendingMainImagePreview, setPendingMainImagePreview] = useState<string | null>(null);
+  const [galleryMedia, setGalleryMedia] = useState<GalleryItem[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -82,18 +84,17 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
             description: competition.description,
             mainImage: undefined,
           });
-          setInitialMainImageBase64(competition.mainImageBase64 || null);
-          setMainImagePreview(competition.mainImageBase64 || null);
+          setExistingMainImageUrl(competition.mainImageBase64 || null);
 
-          const legacy: MediaItem[] = Array.isArray(competition.galleryImagesBase64)
+          const legacy: GalleryItem[] = Array.isArray(competition.galleryImagesBase64)
             ? competition.galleryImagesBase64
                 .filter((u: any): u is string => typeof u === 'string')
-                .map((u: string) => ({ type: 'image' as const, url: u }))
+                .map((u: string) => ({ kind: 'existing' as const, type: 'image' as const, url: u }))
             : [];
-          const newMedia: MediaItem[] = Array.isArray(competition.galleryMedia)
-            ? competition.galleryMedia.filter(
-                (m: any) => m && (m.type === 'image' || m.type === 'video') && typeof m.url === 'string'
-              )
+          const newMedia: GalleryItem[] = Array.isArray(competition.galleryMedia)
+            ? competition.galleryMedia
+                .filter((m: any) => m && (m.type === 'image' || m.type === 'video') && typeof m.url === 'string')
+                .map((m: any) => ({ kind: 'existing' as const, type: m.type, url: m.url }))
             : [];
           setGalleryMedia([...legacy, ...newMedia]);
         } else {
@@ -114,93 +115,113 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
     }
   }, [competitionId, form, router]);
 
-  // Local preview only (not sent to server)
-  const fileToPreviewDataUrl = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
+  // Revoke pending object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (pendingMainImagePreview) URL.revokeObjectURL(pendingMainImagePreview);
+      galleryMedia.forEach((m) => {
+        if (m.kind === 'pending') URL.revokeObjectURL(m.previewUrl);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Upload to /api/upload — returns public path
-  const uploadCompetitionImage = (file: File, isMain = false): Promise<string> =>
-    uploadImage(file, {
-      folder: 'competitions',
-      maxSizeMB: isMain ? 0.5 : 0.25,
-      maxWidthOrHeight: isMain ? 1920 : 1280,
-    });
+  const mainImagePreview = pendingMainImagePreview ?? existingMainImageUrl;
 
-  const handleMainImageChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
+  const handleMainImageChange = (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-      try {
-        const url = await uploadCompetitionImage(file, true);
-        setMainImagePreview(url);
-        setInitialMainImageBase64(url);
-        onChange(event.target.files);
-      } catch (err: any) {
-        toast.error(err.message || 'Failed to upload image');
-      }
+      if (pendingMainImagePreview) URL.revokeObjectURL(pendingMainImagePreview);
+      setPendingMainImageFile(file);
+      setPendingMainImagePreview(URL.createObjectURL(file));
+      onChange(event.target.files);
     } else {
-      setMainImagePreview(initialMainImageBase64);
+      if (pendingMainImagePreview) URL.revokeObjectURL(pendingMainImagePreview);
+      setPendingMainImageFile(null);
+      setPendingMainImagePreview(null);
       onChange(null);
     }
   };
 
-  const handleGalleryMediaChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryMediaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) return;
     const files = Array.from(event.target.files);
-    setUploadingMedia(true);
-    try {
-      const uploaded: MediaItem[] = [];
-      for (const file of files) {
-        const isVideo = ACCEPTED_VIDEO_TYPES.includes(file.type);
-        const isImage = ACCEPTED_IMAGE_TYPES.includes(file.type);
-        if (!isImage && !isVideo) {
-          toast.error(`Unsupported file type: ${file.name}`);
-          continue;
-        }
-        if (isVideo && file.size > MAX_VIDEO_SIZE) {
-          toast.error(`Video too large (max 25MB): ${file.name}`);
-          continue;
-        }
-        if (isImage && file.size > MAX_IMAGE_SIZE) {
-          toast.error(`Image too large (max 20MB): ${file.name}`);
-          continue;
-        }
-        const url = await uploadImage(file, {
-          folder: 'competitions',
-          maxSizeMB: 0.25,
-          maxWidthOrHeight: 1280,
-        });
-        uploaded.push({ type: isVideo ? 'video' : 'image', url });
+    const added: GalleryItem[] = [];
+    for (const file of files) {
+      const isVideo = ACCEPTED_VIDEO_TYPES.includes(file.type);
+      const isImage = ACCEPTED_IMAGE_TYPES.includes(file.type);
+      if (!isImage && !isVideo) {
+        toast.error(`Unsupported file type: ${file.name}`);
+        continue;
       }
-      setGalleryMedia(prev => [...prev, ...uploaded]);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to upload media');
-    } finally {
-      setUploadingMedia(false);
-      event.target.value = '';
+      if (isVideo && file.size > MAX_VIDEO_SIZE) {
+        toast.error(`Video too large (max 25MB): ${file.name}`);
+        continue;
+      }
+      if (isImage && file.size > MAX_IMAGE_SIZE) {
+        toast.error(`Image too large (max 20MB): ${file.name}`);
+        continue;
+      }
+      added.push({
+        kind: 'pending',
+        type: isVideo ? 'video' : 'image',
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
     }
+    setGalleryMedia(prev => [...prev, ...added]);
+    event.target.value = '';
   };
 
   const removeMainImage = () => {
-    setMainImagePreview(null);
-    setInitialMainImageBase64(null); // Also clear initial
+    if (pendingMainImagePreview) URL.revokeObjectURL(pendingMainImagePreview);
+    setPendingMainImageFile(null);
+    setPendingMainImagePreview(null);
+    setExistingMainImageUrl(null);
     form.setValue('mainImage', null);
     const input = document.getElementById('main-image-upload') as HTMLInputElement;
     if (input) input.value = '';
   };
 
   const removeGalleryMedia = (indexToRemove: number) => {
-    setGalleryMedia(prev => prev.filter((_, index) => index !== indexToRemove));
+    setGalleryMedia(prev => {
+      const removed = prev[indexToRemove];
+      if (removed && removed.kind === 'pending') URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, index) => index !== indexToRemove);
+    });
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const finalMainImageBase64 = mainImagePreview;
+      let finalMainImageBase64: string | null = existingMainImageUrl;
+      if (pendingMainImageFile) {
+        try {
+          finalMainImageBase64 = await uploadImage(pendingMainImageFile, {
+            folder: 'competitions',
+            maxSizeMB: 0.5,
+            maxWidthOrHeight: 1920,
+          });
+        } catch (err: any) {
+          toast.error(err.message || 'Failed to upload main image');
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const finalGalleryMedia: { type: 'image' | 'video'; url: string }[] = [];
+      for (const item of galleryMedia) {
+        if (item.kind === 'existing') {
+          finalGalleryMedia.push({ type: item.type, url: item.url });
+        } else {
+          const url = await uploadImage(item.file, {
+            folder: 'competitions',
+            maxSizeMB: 0.25,
+            maxWidthOrHeight: 1280,
+          });
+          finalGalleryMedia.push({ type: item.type, url });
+        }
+      }
 
       const payload = {
         title: values.title,
@@ -210,7 +231,7 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
         description: values.description,
         mainImageBase64: finalMainImageBase64,
         galleryImagesBase64: [], // legacy field — migrated into galleryMedia on edit
-        galleryMedia,
+        galleryMedia: finalGalleryMedia,
       };
 
       const res = await fetch(`/api/admin/competitions/${competitionId}`, {
@@ -225,13 +246,16 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
 
       if (res.ok) {
         toast.success(data.message || "Competition updated successfully!");
+        galleryMedia.forEach((m) => {
+          if (m.kind === 'pending') URL.revokeObjectURL(m.previewUrl);
+        });
         router.push('/admin/competitions/manage');
       } else {
         toast.error(data.message || 'Failed to update competition.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update competition error:', error);
-      toast.error('Network error or server unreachable.');
+      toast.error(error?.message || 'Network error or server unreachable.');
     } finally {
       setIsLoading(false);
     }
@@ -370,9 +394,10 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
                     <p className="mb-2 text-sm text-admin-text-secondary">
-                      <span className="font-semibold">{uploadingMedia ? 'Uploading…' : 'Click to upload'}</span> images and videos
+                      <span className="font-semibold">Click to select</span> images and videos
                     </p>
                     <p className="text-xs text-admin-text-secondary">Images: PNG/JPG/WEBP (20MB) • Videos: MP4/WEBM/MOV (25MB)</p>
+                    <p className="text-xs text-admin-text-secondary mt-1">Files upload when you click Update Competition</p>
                   </div>
                   <Input
                     id="gallery-media-upload"
@@ -380,20 +405,21 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
                     multiple
                     accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/webm,video/ogg,video/quicktime"
                     className="hidden"
-                    disabled={uploadingMedia}
                     onChange={handleGalleryMediaChange}
                   />
                 </label>
               </div>
               {galleryMedia.length > 0 && (
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  {galleryMedia.map((item, index) => (
+                  {galleryMedia.map((item, index) => {
+                    const src = item.kind === 'existing' ? item.url : item.previewUrl;
+                    return (
                     <div key={index} className="relative w-full h-20 rounded-md overflow-hidden border border-admin-border bg-black">
                       {item.type === 'image' ? (
-                        <Image src={item.url} alt={`Media ${index + 1}`} layout="fill" objectFit="cover" unoptimized />
+                        <Image src={src} alt={`Media ${index + 1}`} layout="fill" objectFit="cover" unoptimized />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-white">
-                          <video src={item.url} className="absolute inset-0 w-full h-full object-cover" muted />
+                          <video src={src} className="absolute inset-0 w-full h-full object-cover" muted />
                           <PlayCircle className="relative h-8 w-8 text-white drop-shadow-lg" />
                         </div>
                       )}
@@ -407,7 +433,8 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
                         <XCircle className="h-4 w-4" />
                       </Button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -428,8 +455,8 @@ export const EditCompetitionForm = ({ competitionId }: EditCompetitionFormProps)
                 </FormItem>
               )}
             />
-            <Button type="submit" variant="default" className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading || uploadingMedia}>
-              {isLoading ? 'Updating...' : 'Update Competition'}
+            <Button type="submit" variant="default" className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading}>
+              {isLoading ? 'Uploading & saving...' : 'Update Competition'}
             </Button>
           </form>
         </Form>

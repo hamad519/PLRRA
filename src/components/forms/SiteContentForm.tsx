@@ -42,9 +42,14 @@ const contentSchema = z.object({
   })),
 });
 
+type PendingImage = { file: File; previewUrl: string };
+
 export const SiteContentForm = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  // Pending image files keyed by useFieldArray field.id (stable across reorders).
+  const [pendingHeroImages, setPendingHeroImages] = useState<Record<string, PendingImage>>({});
+  const [pendingChampionImages, setPendingChampionImages] = useState<Record<string, PendingImage>>({});
 
   const form = useForm<z.infer<typeof contentSchema>>({
     resolver: zodResolver(contentSchema),
@@ -90,28 +95,89 @@ export const SiteContentForm = () => {
     fetchContent();
   }, [form]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
-    if (e.target.files?.[0]) {
-      try {
-        const url = await uploadImage(e.target.files[0], { folder: 'site', maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
-        callback(url);
-      } catch (err: any) {
-        toast.error(err.message || 'Failed to upload image');
-      }
-    }
+  const stagePendingImage = (
+    fieldId: string,
+    file: File,
+    bucket: 'hero' | 'champion'
+  ) => {
+    const setter = bucket === 'hero' ? setPendingHeroImages : setPendingChampionImages;
+    setter((prev) => {
+      const existing = prev[fieldId];
+      if (existing) URL.revokeObjectURL(existing.previewUrl);
+      return { ...prev, [fieldId]: { file, previewUrl: URL.createObjectURL(file) } };
+    });
   };
+
+  const handleImageSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldId: string,
+    bucket: 'hero' | 'champion'
+  ) => {
+    if (e.target.files?.[0]) {
+      stagePendingImage(fieldId, e.target.files[0], bucket);
+    }
+    e.target.value = '';
+  };
+
+  // Revoke object URLs on unmount.
+  useEffect(() => {
+    return () => {
+      Object.values(pendingHeroImages).forEach((p) => URL.revokeObjectURL(p.previewUrl));
+      Object.values(pendingChampionImages).forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onSubmit(values: z.infer<typeof contentSchema>) {
     setIsSaving(true);
     try {
+      // Upload any pending hero images, replacing imageBase64 with the uploaded URL.
+      const heroSlides = await Promise.all(
+        values.heroSlides.map(async (slide, idx) => {
+          const fieldId = heroFields[idx]?.id;
+          const pending = fieldId ? pendingHeroImages[fieldId] : undefined;
+          if (pending) {
+            const url = await uploadImage(pending.file, {
+              folder: 'site',
+              maxSizeMB: 0.5,
+              maxWidthOrHeight: 1920,
+            });
+            return { ...slide, imageBase64: url };
+          }
+          return slide;
+        })
+      );
+
+      const championMoments = await Promise.all(
+        values.championMoments.map(async (moment, idx) => {
+          const fieldId = championFields[idx]?.id;
+          const pending = fieldId ? pendingChampionImages[fieldId] : undefined;
+          if (pending) {
+            const url = await uploadImage(pending.file, {
+              folder: 'site',
+              maxSizeMB: 0.5,
+              maxWidthOrHeight: 1920,
+            });
+            return { ...moment, imageBase64: url };
+          }
+          return moment;
+        })
+      );
+
+      const payload = { ...values, heroSlides, championMoments };
+
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success("Site content updated successfully!");
+        Object.values(pendingHeroImages).forEach((p) => URL.revokeObjectURL(p.previewUrl));
+        Object.values(pendingChampionImages).forEach((p) => URL.revokeObjectURL(p.previewUrl));
+        setPendingHeroImages({});
+        setPendingChampionImages({});
       } else {
         console.error('Save failed:', data);
         toast.error(data.message || "Failed to save changes");
@@ -284,7 +350,11 @@ export const SiteContentForm = () => {
               </Button>
             </CardHeader>
             <CardContent className="p-8 space-y-8">
-              {heroFields.map((field, index) => (
+              {heroFields.map((field, index) => {
+                const pendingPreview = pendingHeroImages[field.id]?.previewUrl;
+                const existing = form.watch(`heroSlides.${index}.imageBase64`);
+                const previewSrc = pendingPreview || existing;
+                return (
                 <div key={field.id} className="p-8 bg-admin-bg/30 rounded-[2rem] border border-admin-border relative group">
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeHero(index)} className="absolute top-4 right-4 text-red-500 hover:bg-red-50 rounded-full">
                     <Trash2 size={20} />
@@ -292,14 +362,14 @@ export const SiteContentForm = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div className="lg:col-span-4">
                       <div className="relative aspect-video bg-white rounded-2xl border-2 border-dashed border-admin-border flex items-center justify-center overflow-hidden">
-                        {form.watch(`heroSlides.${index}.imageBase64`) ? (
-                          <Image src={form.watch(`heroSlides.${index}.imageBase64`)} alt="Hero" fill className="object-cover" />
+                        {previewSrc ? (
+                          <Image src={previewSrc} alt="Hero" fill className="object-cover" unoptimized={!!pendingPreview} />
                         ) : (
                           <ImageIcon size={40} className="text-gray-300" />
                         )}
                         <label className="absolute inset-0 cursor-pointer bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Upload className="text-white" />
-                          <input type="file" className="hidden" onChange={(e) => handleImageUpload(e, (b) => form.setValue(`heroSlides.${index}.imageBase64`, b))} />
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, field.id, 'hero')} />
                         </label>
                       </div>
                     </div>
@@ -318,7 +388,8 @@ export const SiteContentForm = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </Reveal>
@@ -335,17 +406,21 @@ export const SiteContentForm = () => {
               </Button>
             </CardHeader>
             <CardContent className="p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {championFields.map((field, index) => (
+              {championFields.map((field, index) => {
+                const pendingPreview = pendingChampionImages[field.id]?.previewUrl;
+                const existing = form.watch(`championMoments.${index}.imageBase64`);
+                const previewSrc = pendingPreview || existing;
+                return (
                 <div key={field.id} className="relative group bg-admin-bg/30 p-4 rounded-2xl border border-admin-border">
                   <div className="relative aspect-square bg-white rounded-xl overflow-hidden mb-4 border border-admin-border">
-                    {form.watch(`championMoments.${index}.imageBase64`) ? (
-                      <Image src={form.watch(`championMoments.${index}.imageBase64`)} alt="Champion" fill className="object-cover" />
+                    {previewSrc ? (
+                      <Image src={previewSrc} alt="Champion" fill className="object-cover" unoptimized={!!pendingPreview} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-300"><ImageIcon size={32} /></div>
                     )}
                     <label className="absolute inset-0 cursor-pointer bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Upload className="text-white" />
-                      <input type="file" className="hidden" onChange={(e) => handleImageUpload(e, (b) => form.setValue(`championMoments.${index}.imageBase64`, b))} />
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, field.id, 'champion')} />
                     </label>
                   </div>
                   <FormField control={form.control} name={`championMoments.${index}.title`} render={({ field }) => (
@@ -355,7 +430,8 @@ export const SiteContentForm = () => {
                     <XCircle size={16} />
                   </Button>
                 </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </Reveal>
