@@ -1,0 +1,227 @@
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { History } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { Reveal } from '@/components/animations/Reveal';
+import { HierarchicalBulletsField, HierarchicalBullet } from '@/components/forms/HierarchicalBulletsField';
+
+const ICON_OPTIONS = ['History', 'TrendingUp', 'Rocket', 'Landmark', 'Globe', 'Calendar', 'Flag', 'Trophy', 'Target'];
+
+const formSchema = z.object({
+  year: z.string().optional(),
+  title: z.string().optional(),
+  intro: z.string().optional(),
+  iconName: z.string().optional(),
+  sortOrder: z.number().optional(),
+});
+
+export default function EditHistorySectionPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = String(params?.id ?? '');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [bullets, setBullets] = useState<HierarchicalBullet[]>([]);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { year: '', title: '', intro: '', iconName: '', sortOrder: 0 },
+  });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/admin/history/${id}`);
+        const data = await res.json();
+        if (data.success) {
+          form.reset({
+            year: data.data.year || '',
+            title: data.data.title || '',
+            intro: data.data.intro || '',
+            iconName: data.data.iconName || '',
+            sortOrder: data.data.sortOrder ?? 0,
+          });
+          const raw = Array.isArray(data.data.bullets) ? data.data.bullets : [];
+          setBullets(
+            raw.map((b: any) => ({
+              text: typeof b?.text === 'string' ? b.text : '',
+              children: Array.isArray(b?.children) ? b.children.map((c: any) => String(c ?? '')) : [],
+            }))
+          );
+        } else {
+          toast.error(data.message || 'Failed to load');
+          router.push('/admin/history/manage');
+        }
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to load');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (id) load();
+  }, [id, form, router]);
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const cleanedBullets = bullets
+      .map((b) => ({
+        text: b.text.trim(),
+        children: (b.children || []).map((c) => c.trim()).filter(Boolean),
+      }))
+      .filter((b) => b.text.length > 0);
+
+    if (!values.title?.trim() && !values.intro?.trim() && cleanedBullets.length === 0) {
+      toast.error('Provide a title, intro, or at least one bullet');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/admin/history/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          year: values.year || '',
+          title: values.title || '',
+          intro: values.intro || '',
+          iconName: values.iconName || '',
+          sortOrder: values.sortOrder ?? 0,
+          bullets: cleanedBullets,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('Updated!');
+        router.push('/admin/history/manage');
+      } else {
+        toast.error(data.message || 'Failed');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (isLoading) return <div className="text-center py-20 text-admin-text-secondary">Loading...</div>;
+
+  return (
+    <div className="space-y-10">
+      <header>
+        <Reveal direction="down">
+          <h1 className="text-4xl font-black text-admin-text-primary tracking-tight">
+            Edit <span className="text-admin-accent">History Section</span>
+          </h1>
+        </Reveal>
+      </header>
+
+      <Card className="max-w-3xl mx-auto bg-white border-admin-border shadow-xl rounded-[2rem]">
+        <CardHeader className="p-8 bg-admin-bg/50 border-b border-admin-border">
+          <CardTitle className="text-2xl font-black flex items-center gap-3">
+            <History className="text-admin-accent" /> Update History Section
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-8">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="year"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-bold">Year / Period (optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} className="bg-admin-bg border-none h-12 rounded-xl" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="sortOrder"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-bold">Sort Order</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          className="bg-admin-bg border-none h-12 rounded-xl"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold">Title (optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} className="bg-admin-bg border-none h-12 rounded-xl" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="intro"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold">Intro Paragraph (optional)</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} className="bg-admin-bg border-none min-h-[100px] rounded-xl" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="iconName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold">Icon (optional)</FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="w-full bg-admin-bg border-none h-12 rounded-xl px-4 text-sm"
+                      >
+                        <option value="">— No icon —</option>
+                        {ICON_OPTIONS.map((name) => (
+                          <option key={name} value={name}>{name}</option>
+                        ))}
+                      </select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <HierarchicalBulletsField value={bullets} onChange={setBullets} />
+
+              <Button type="submit" disabled={isSaving} className="w-full py-8 rounded-xl bg-admin-accent text-white font-black uppercase tracking-widest">
+                {isSaving ? 'Saving...' : 'Update'}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

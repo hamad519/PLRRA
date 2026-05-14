@@ -16,6 +16,7 @@ export async function GET() {
         stats: settings.stats ?? DEFAULT_STATS,
         championMoments: settings.championMoments ?? [],
         heroSlides: settings.heroSlides ?? [],
+        aims: settings.aims ?? [],
       },
     });
   } catch (error: any) {

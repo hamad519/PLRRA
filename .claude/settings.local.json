@@ -6,7 +6,11 @@
       "Bash(git -C e:/PLRRA grep -n \"sharp\" package.json package-lock.json)",
       "Bash(npm run *)",
       "Bash(npx prisma *)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(mkdir -p \"e:/PLRRA/src/app/admin/achievements/[id]/edit\")"
+    ],
+    "additionalDirectories": [
+      "e:\\PLRRA\\src\\app\\admin\\achievements\\[id]"
     ]
   }
 }

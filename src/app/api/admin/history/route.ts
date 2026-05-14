@@ -17,36 +17,39 @@ function sanitizeBullets(input: unknown): { text: string; children?: string[] }[
     .filter((b): b is { text: string; children?: string[] } => b !== null);
 }
 
-export async function POST(req: Request) {
+export async function GET() {
   try {
-    const { year, title, bullets, sortOrder, isActive } = await req.json();
-    if (!title || typeof title !== 'string' || !title.trim()) {
-      return NextResponse.json({ success: false, message: 'Title is required' }, { status: 400 });
-    }
-    const cleanBullets = sanitizeBullets(bullets);
-    if (cleanBullets.length === 0) {
-      return NextResponse.json({ success: false, message: 'At least one bullet point is required' }, { status: 400 });
-    }
-    const item = await prisma.achievement.create({
-      data: {
-        year: typeof year === 'string' ? year : '',
-        title: title.trim(),
-        bullets: cleanBullets,
-        sortOrder: typeof sortOrder === 'number' ? sortOrder : 0,
-        isActive: isActive ?? true,
-      },
-    });
-    return NextResponse.json({ success: true, message: 'Achievement added', data: item }, { status: 201 });
+    const items = await prisma.historySection.findMany({ orderBy: { sortOrder: 'asc' } });
+    const data = items.map((i: any) => ({ ...i, _id: i.id }));
+    return NextResponse.json({ success: true, data });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
 
-export async function GET() {
+export async function POST(req: Request) {
   try {
-    const items = await prisma.achievement.findMany({ orderBy: { sortOrder: 'asc' } });
-    const data = items.map((i: any) => ({ ...i, _id: i.id }));
-    return NextResponse.json({ success: true, data });
+    const { year, title, intro, iconName, bullets, sortOrder, isActive } = await req.json();
+    const cleanBullets = sanitizeBullets(bullets);
+    const hasContent =
+      (typeof title === 'string' && title.trim()) ||
+      (typeof intro === 'string' && intro.trim()) ||
+      cleanBullets.length > 0;
+    if (!hasContent) {
+      return NextResponse.json({ success: false, message: 'Provide a title, intro, or at least one bullet' }, { status: 400 });
+    }
+    const item = await prisma.historySection.create({
+      data: {
+        year: typeof year === 'string' ? year : '',
+        title: typeof title === 'string' ? title : '',
+        intro: typeof intro === 'string' ? intro : '',
+        iconName: typeof iconName === 'string' ? iconName : '',
+        bullets: cleanBullets,
+        sortOrder: typeof sortOrder === 'number' ? sortOrder : 0,
+        isActive: isActive ?? true,
+      },
+    });
+    return NextResponse.json({ success: true, message: 'History section added', data: item }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }

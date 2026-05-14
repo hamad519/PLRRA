@@ -9,22 +9,24 @@ import { TableSkeleton } from '@/components/ui/TableSkeleton';
 import Link from 'next/link';
 
 interface Bullet { text: string; children?: string[] }
-interface Achievement {
+interface HistoryItem {
   _id: number;
   year: string;
   title: string;
+  intro: string;
+  iconName: string;
   bullets: Bullet[];
   sortOrder: number;
 }
 
-export default function ManageAchievementsPage() {
-  const [items, setItems] = useState<Achievement[]>([]);
+export default function ManageHistoryPage() {
+  const [items, setItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/achievements');
+      const res = await fetch('/api/admin/history');
       const data = await res.json();
       if (data.success) setItems(data.data);
     } catch {
@@ -39,9 +41,9 @@ export default function ManageAchievementsPage() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Delete this achievement?')) return;
+    if (!window.confirm('Delete this history section?')) return;
     try {
-      const res = await fetch(`/api/admin/achievements/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/history/${id}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success('Deleted');
         fetchData();
@@ -61,10 +63,10 @@ export default function ManageAchievementsPage() {
     <div className="space-y-10">
       <div className="flex items-center justify-between">
         <h1 className="text-4xl font-black text-admin-text-primary">
-          Manage <span className="text-admin-accent">Achievements</span>
+          Manage <span className="text-admin-accent">History</span>
         </h1>
-        <Link href="/admin/achievements/add">
-          <Button className="bg-admin-accent text-white font-bold rounded-xl px-6">+ Add Achievement</Button>
+        <Link href="/admin/history/add">
+          <Button className="bg-admin-accent text-white font-bold rounded-xl px-6">+ Add Section</Button>
         </Link>
       </div>
       <div className="bg-admin-card-bg border border-admin-border rounded-xl shadow-xl overflow-hidden">
@@ -84,19 +86,19 @@ export default function ManageAchievementsPage() {
             ) : items.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-10 text-admin-text-secondary">
-                  No achievements yet.
+                  No history sections yet.
                 </TableCell>
               </TableRow>
             ) : (
               items.map((item) => (
                 <TableRow key={item._id} className="hover:bg-admin-hover-bg">
                   <TableCell className="font-black text-admin-accent">{item.year || '—'}</TableCell>
-                  <TableCell className="font-bold text-admin-text-primary">{item.title}</TableCell>
+                  <TableCell className="font-bold text-admin-text-primary">{item.title || '—'}</TableCell>
                   <TableCell className="text-admin-text-secondary text-sm">{summarize(item.bullets)}</TableCell>
                   <TableCell className="text-admin-text-secondary text-sm">{item.sortOrder}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
-                      <Link href={`/admin/achievements/${item._id}/edit`}>
+                      <Link href={`/admin/history/${item._id}/edit`}>
                         <Button variant="ghost" size="icon" className="text-admin-accent">
                           <Pencil size={18} />
                         </Button>

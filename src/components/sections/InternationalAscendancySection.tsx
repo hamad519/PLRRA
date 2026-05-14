@@ -16,12 +16,16 @@ const COLOR_MAP: Record<number, string> = {
   5: 'from-indigo-500 to-blue-500',
 };
 
+interface Bullet {
+  text: string;
+  children?: string[];
+}
+
 interface Achievement {
   id: number;
   year: string;
   title: string;
-  subtitle: string;
-  details: string[];
+  bullets: Bullet[];
 }
 
 export const InternationalAscendancySection = () => {
@@ -34,8 +38,11 @@ export const InternationalAscendancySection = () => {
         const res = await fetch('/api/admin/achievements');
         const data = await res.json();
         if (data.success) setAchievements(data.data);
-      } catch { /* silently fall through */ }
-      finally { setLoading(false); }
+      } catch {
+        /* silently fall through */
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, []);
@@ -52,9 +59,14 @@ export const InternationalAscendancySection = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-plra-bg-soft rounded-[2.5rem] p-10 space-y-6">
-                <div className="flex justify-between"><Skeleton className="w-16 h-16 rounded-2xl" /><Skeleton className="w-16 h-10" /></div>
-                <Skeleton className="h-7 w-[70%]" /><Skeleton className="h-4 w-[50%]" />
-                {[1, 2, 3, 4].map((j) => <Skeleton key={j} className="h-4 w-full" />)}
+                <div className="flex justify-between">
+                  <Skeleton className="w-16 h-16 rounded-2xl" />
+                  <Skeleton className="w-16 h-10" />
+                </div>
+                <Skeleton className="h-7 w-[70%]" />
+                {[1, 2, 3, 4].map((j) => (
+                  <Skeleton key={j} className="h-4 w-full" />
+                ))}
               </div>
             ))}
           </div>
@@ -81,12 +93,12 @@ export const InternationalAscendancySection = () => {
           </Reveal>
           <Reveal delay={0.3}>
             <h2 className="text-4xl md:text-6xl font-black text-plra-black mb-8 leading-tight">
-              Pakistan FTR Team's <span className="text-transparent bg-clip-text bg-gradient-to-r from-plra-accent-purple via-plra-accent-pink to-plra-gold">International Ascendancy</span>
+              Pakistan FTR Team&apos;s <span className="text-transparent bg-clip-text bg-gradient-to-r from-plra-accent-purple via-plra-accent-pink to-plra-gold">International Ascendancy</span>
             </h2>
           </Reveal>
           <Reveal delay={0.5}>
             <p className="text-gray-600 text-lg md:text-xl leading-relaxed">
-              From a stunning debut to absolute dominance, witness the journey of Pakistan's elite marksmen as they conquer the world's most prestigious ranges.
+              From a stunning debut to absolute dominance, witness the journey of Pakistan&apos;s elite marksmen as they conquer the world&apos;s most prestigious ranges.
             </p>
           </Reveal>
         </div>
@@ -95,26 +107,37 @@ export const InternationalAscendancySection = () => {
           {achievements.map((item, index) => {
             const IconComp = ICON_MAP[index % 6] || Trophy;
             const color = COLOR_MAP[index % 6];
-            const details = (item.details ?? []) as string[];
+            const bullets = (item.bullets ?? []) as Bullet[];
 
             return (
               <Reveal key={item.id} delay={index * 0.2} direction="up">
                 <div className="group relative h-full">
-                  <div className={cn("absolute -inset-0.5 rounded-[2.5rem] opacity-10 group-hover:opacity-30 blur-xl transition duration-500 bg-gradient-to-r", color)}></div>
+                  <div className={cn('absolute -inset-0.5 rounded-[2.5rem] opacity-10 group-hover:opacity-30 blur-xl transition duration-500 bg-gradient-to-r', color)}></div>
                   <div className="relative h-full bg-plra-bg-soft border border-gray-100 rounded-[2.5rem] p-10 flex flex-col hover:bg-white hover:shadow-2xl transition-all duration-500">
                     <div className="flex justify-between items-start mb-8">
-                      <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br", color)}>
+                      <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br', color)}>
                         <IconComp size={32} />
                       </div>
-                      <span className="text-4xl font-black text-gray-200 group-hover:text-gray-300 transition-colors">{item.year}</span>
+                      {item.year && <span className="text-4xl font-black text-gray-200 group-hover:text-gray-300 transition-colors">{item.year}</span>}
                     </div>
-                    <h3 className="text-2xl font-black text-plra-black mb-2 group-hover:text-plra-accent-purple transition-colors">{item.title}</h3>
-                    <p className="text-plra-accent-pink font-bold text-sm uppercase tracking-widest mb-8">{item.subtitle}</p>
+                    <h3 className="text-2xl font-black text-plra-black mb-6 group-hover:text-plra-accent-purple transition-colors">{item.title}</h3>
                     <ul className="space-y-4 flex-grow">
-                      {details.map((detail, dIndex) => (
-                        <li key={dIndex} className="flex items-start gap-3 text-gray-600 group-hover:text-gray-700 transition-colors">
-                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-plra-gold flex-shrink-0"></div>
-                          <span className="text-sm leading-relaxed">{detail}</span>
+                      {bullets.map((bullet, bIndex) => (
+                        <li key={bIndex} className="text-gray-700">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-2 w-1.5 h-1.5 rounded-full bg-plra-gold flex-shrink-0"></div>
+                            <span className="text-sm leading-relaxed">{bullet.text}</span>
+                          </div>
+                          {Array.isArray(bullet.children) && bullet.children.length > 0 && (
+                            <ul className="mt-2 ml-6 space-y-2">
+                              {bullet.children.map((child, cIndex) => (
+                                <li key={cIndex} className="flex items-start gap-3 text-gray-500">
+                                  <div className="mt-2 w-1 h-1 rounded-full bg-plra-accent-purple/50 flex-shrink-0"></div>
+                                  <span className="text-xs leading-relaxed">{child}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </li>
                       ))}
                     </ul>

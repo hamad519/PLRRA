@@ -209,10 +209,9 @@ model Testimonial {
 // -------------------------- ACHIEVEMENT (International Ascendancy) ---
 model Achievement {
   id        Int      @id @default(autoincrement())
-  year      String
+  year      String   @default("")
   title     String
-  subtitle  String   @default("")
-  details   Json // string[]
+  bullets   Json // Array<{ text: string; children?: string[] }>
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -220,6 +219,23 @@ model Achievement {
 
   @@index([sortOrder])
   @@map("achievements")
+}
+
+// -------------------------- HISTORY (Long-Range Shooting in Pakistan) ---
+model HistorySection {
+  id        Int      @id @default(autoincrement())
+  year      String   @default("")
+  title     String   @default("")
+  intro     String   @default("") @db.Text
+  iconName  String   @default("")
+  bullets   Json // Array<{ text: string; children?: string[] }>
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("history_sections")
 }
 
 // -------------------------- CONTRIBUTOR (Major Contributors) ---------
@@ -251,6 +267,7 @@ model SiteSettings {
   stats             Json?
   championMoments   Json?
   heroSlides        Json?
+  aims              Json? // Array<{ title: string; description: string; iconName?: string }>
   accountDetails    Json? // { bankName, accountTitle, accountNumber, iban, branchCode }
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

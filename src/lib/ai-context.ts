@@ -236,10 +236,15 @@ Current Statistics:
       if (achievements.length > 0) {
         context += `\n=== INTERNATIONAL ACHIEVEMENTS (FTR Team) ===\n`;
         for (const ach of achievements) {
-          const details = (ach.details ?? []) as string[];
-          context += `\n[${ach.year}] ${ach.title} — ${ach.subtitle}\n`;
-          for (const d of details) {
-            context += `  - ${d}\n`;
+          const bullets = (ach.bullets ?? []) as Array<{ text: string; children?: string[] }>;
+          context += `\n[${ach.year}] ${ach.title}\n`;
+          for (const b of bullets) {
+            context += `  - ${b.text}\n`;
+            if (Array.isArray(b.children)) {
+              for (const c of b.children) {
+                context += `    • ${c}\n`;
+              }
+            }
           }
         }
       }

@@ -40,7 +40,14 @@ const contentSchema = z.object({
     description: z.string(),
     imageBase64: z.string(),
   })),
+  aims: z.array(z.object({
+    title: z.string(),
+    description: z.string(),
+    iconName: z.string().optional(),
+  })),
 });
+
+const AIM_ICON_OPTIONS = ['Target', 'Users', 'Handshake', 'ShieldCheck', 'Trophy', 'Star', 'Flag', 'Globe', 'Award'];
 
 type PendingImage = { file: File; previewUrl: string };
 
@@ -59,6 +66,7 @@ export const SiteContentForm = () => {
       accountDetails: { bankName: "", accountTitle: "", accountNumber: "", iban: "", branchCode: "" },
       championMoments: [],
       heroSlides: [],
+      aims: [],
     },
   });
 
@@ -70,6 +78,11 @@ export const SiteContentForm = () => {
   const { fields: heroFields, append: appendHero, remove: removeHero } = useFieldArray({
     control: form.control,
     name: "heroSlides",
+  });
+
+  const { fields: aimFields, append: appendAim, remove: removeAim } = useFieldArray({
+    control: form.control,
+    name: "aims",
   });
 
   useEffect(() => {
@@ -84,6 +97,7 @@ export const SiteContentForm = () => {
             accountDetails: data.data.accountDetails || { bankName: "", accountTitle: "", accountNumber: "", iban: "", branchCode: "" },
             championMoments: data.data.championMoments || [],
             heroSlides: data.data.heroSlides || [],
+            aims: data.data.aims || [],
           });
         }
       } catch (error) {
@@ -218,6 +232,61 @@ export const SiteContentForm = () => {
                   </FormItem>
                 )}
               />
+            </CardContent>
+          </Card>
+        </Reveal>
+
+        {/* Section 1.5: Our Aims */}
+        <Reveal direction="up" delay={0.05}>
+          <Card className="bg-white border-none shadow-xl rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="p-8 bg-admin-bg/50 border-b border-admin-border flex flex-row items-center justify-between">
+              <CardTitle className="text-xl font-black flex items-center gap-3">
+                <Info className="text-admin-accent" /> Our Aims
+              </CardTitle>
+              <Button type="button" onClick={() => appendAim({ title: "", description: "", iconName: "Target" })} className="bg-admin-accent text-white rounded-xl">
+                <Plus size={18} className="mr-2" /> Add Aim
+              </Button>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              {aimFields.length === 0 && (
+                <p className="text-sm text-admin-text-secondary italic text-center py-6">
+                  No aims yet. Click &ldquo;Add Aim&rdquo; to start (e.g., Development, Representation, Collaboration, Safety).
+                </p>
+              )}
+              {aimFields.map((field, index) => (
+                <div key={field.id} className="p-6 bg-admin-bg/30 rounded-[1.5rem] border border-admin-border relative">
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeAim(index)} className="absolute top-3 right-3 text-red-500 hover:bg-red-50 rounded-full">
+                    <Trash2 size={18} />
+                  </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <FormField control={form.control} name={`aims.${index}.iconName`} render={({ field }) => (
+                      <FormItem className="md:col-span-3">
+                        <FormLabel className="font-bold">Icon</FormLabel>
+                        <FormControl>
+                          <select {...field} className="w-full bg-white border-none h-12 rounded-xl px-4 text-sm">
+                            <option value="">— None —</option>
+                            {AIM_ICON_OPTIONS.map((name) => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                          </select>
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name={`aims.${index}.title`} render={({ field }) => (
+                      <FormItem className="md:col-span-9">
+                        <FormLabel className="font-bold">Title</FormLabel>
+                        <FormControl><Input {...field} placeholder="e.g., Development" className="bg-white border-none h-12 rounded-xl" /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name={`aims.${index}.description`} render={({ field }) => (
+                      <FormItem className="md:col-span-12">
+                        <FormLabel className="font-bold">Description</FormLabel>
+                        <FormControl><Textarea {...field} placeholder="e.g., Encouraging participation and growth in Long-Range Rifle Shooting across Pakistan." className="bg-white border-none min-h-[80px] rounded-xl" /></FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </Reveal>
