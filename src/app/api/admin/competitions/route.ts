@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
-    const { title, fromDate, toDate, location, description, mainImageBase64, galleryImagesBase64 } = await req.json();
+    const { title, fromDate, toDate, location, description, mainImageBase64, galleryImagesBase64, galleryMedia } = await req.json();
 
     if (!title || !fromDate || !toDate || !location || !mainImageBase64) {
       return NextResponse.json({ message: 'Title, from date, to date, location, and main image are required' }, { status: 400 });
@@ -18,6 +18,7 @@ export async function POST(req: Request) {
         description: description || '',
         mainImageBase64,
         galleryImagesBase64: galleryImagesBase64 ?? [],
+        galleryMedia: galleryMedia ?? [],
       },
     });
 
@@ -38,6 +39,8 @@ export async function GET() {
         date: true,
         location: true,
         mainImageBase64: true, // still a small path string — keep for list thumbnails
+        galleryImagesBase64: true,
+        galleryMedia: true,
         description: true,
         createdAt: true,
         updatedAt: true,

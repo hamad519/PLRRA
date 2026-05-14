@@ -11,10 +11,17 @@ const DOCUMENT_TYPES = [
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
-const ALLOWED_TYPES = [...IMAGE_TYPES, ...DOCUMENT_TYPES];
+const VIDEO_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/ogg',
+  'video/quicktime',
+];
+const ALLOWED_TYPES = [...IMAGE_TYPES, ...DOCUMENT_TYPES, ...VIDEO_TYPES];
 
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024; // 20 MB for images
 const MAX_DOC_BYTES = 25 * 1024 * 1024; // 25 MB for PDFs / DOCX
+const MAX_VIDEO_BYTES = 25 * 1024 * 1024; // 25 MB for videos
 
 function extFromMime(mime: string): string {
   switch (mime) {
@@ -33,6 +40,14 @@ function extFromMime(mime: string): string {
       return 'doc';
     case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
       return 'docx';
+    case 'video/mp4':
+      return 'mp4';
+    case 'video/webm':
+      return 'webm';
+    case 'video/ogg':
+      return 'ogv';
+    case 'video/quicktime':
+      return 'mov';
     default:
       return 'bin';
   }
@@ -56,7 +71,8 @@ export async function POST(req: Request) {
     }
 
     const isDocument = DOCUMENT_TYPES.includes(file.type);
-    const maxBytes = isDocument ? MAX_DOC_BYTES : MAX_IMAGE_BYTES;
+    const isVideo = VIDEO_TYPES.includes(file.type);
+    const maxBytes = isDocument ? MAX_DOC_BYTES : isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
     if (file.size > maxBytes) {
       return NextResponse.json(
         { success: false, message: `File too large (max ${maxBytes / 1024 / 1024} MB)` },

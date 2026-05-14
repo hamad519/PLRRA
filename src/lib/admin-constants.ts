@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout, Rss, MessageSquareQuote, Globe, Crown } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout, Rss, MessageSquareQuote, Globe, Crown, Image as ImageIcon } from 'lucide-react';
 
 export const ADMIN_NAV_LINKS = [
   {
@@ -32,6 +32,15 @@ export const ADMIN_NAV_LINKS = [
       { name: "Add New Event", href: "/admin/events/upcoming/add" },
       { name: "Manage Events", href: "/admin/events/upcoming/manage" },
       { name: "Event Registrations", href: "/admin/events/registrations" },
+    ]
+  },
+  {
+    name: "National Gallery",
+    href: "/admin/national-gallery",
+    icon: ImageIcon,
+    submenus: [
+      { name: "Add Gallery Event", href: "/admin/national-gallery/add" },
+      { name: "Manage Gallery", href: "/admin/national-gallery/manage" },
     ]
   },
   {

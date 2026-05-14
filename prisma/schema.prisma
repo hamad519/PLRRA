@@ -48,12 +48,27 @@ model Competition {
   location             String
   mainImageBase64      String    @db.LongText
   galleryImagesBase64  Json?
+  galleryMedia         Json?     // Array of { type: 'image' | 'video', url: string }
   description          String    @default("") @db.Text
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
   @@index([fromDate])
   @@map("competitions")
+}
+
+// -------------------------- NATIONAL GALLERY EVENT --------------------------
+model NationalGalleryEvent {
+  id              Int      @id @default(autoincrement())
+  title           String
+  date            DateTime
+  mainImageBase64 String   @db.LongText
+  galleryMedia    Json?    // Array of { type: 'image' | 'video', url: string }
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([date])
+  @@map("national_gallery_events")
 }
 
 // -------------------------- PRESS RELEASE --------------------------
