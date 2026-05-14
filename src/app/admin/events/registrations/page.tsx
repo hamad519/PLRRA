@@ -11,11 +11,22 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { User, Mail, Phone, Eye, Trophy } from 'lucide-react';
+import { User, Mail, Phone, Eye, Trophy, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface EventRegistration {
   _id: string;
@@ -47,6 +58,20 @@ export default function EventRegistrationsAdminPage() {
   };
 
   useEffect(() => { fetchRegistrations(); }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/event-registrations/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete');
+      }
+      toast.success('Registration deleted');
+      setRegistrations((prev) => prev.filter((r) => r._id !== id));
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete registration');
+    }
+  };
 
   return (
     <>
@@ -100,6 +125,25 @@ export default function EventRegistrationsAdminPage() {
                         <Eye size={18}/>
                       </Button>
                     </Link>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/20">
+                          <Trash2 size={18} />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete registration?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the registration for {reg.firstName} {reg.lastName} and remove all uploaded documents.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(reg._id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))

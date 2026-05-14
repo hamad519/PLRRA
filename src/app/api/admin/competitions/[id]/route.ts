@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { parseId } from '@/lib/parseId';
+import { deleteUploadedFile, deleteUploadedFiles } from '@/lib/deleteUploadedFile';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -58,7 +59,19 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   if (!numericId) return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
 
   try {
+    const competition = await prisma.competition.findUnique({
+      where: { id: numericId },
+      select: { mainImageBase64: true, galleryImagesBase64: true },
+    });
+    if (!competition) {
+      return NextResponse.json({ success: false, message: 'Competition not found' }, { status: 404 });
+    }
+
     await prisma.competition.delete({ where: { id: numericId } });
+
+    await deleteUploadedFile(competition.mainImageBase64);
+    await deleteUploadedFiles(competition.galleryImagesBase64);
+
     return NextResponse.json({ success: true, message: 'Competition deleted successfully' }, { status: 200 });
   } catch (error: any) {
     if (error.code === 'P2025') {

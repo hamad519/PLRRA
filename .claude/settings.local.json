@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C e:/PLRRA ls-files public/uploads/competitions/)",
+      "Bash(git -C e:/PLRRA check-ignore -v public/uploads/competitions/1778731937812-9b930485c9bd.jpg)",
+      "Bash(git -C e:/PLRRA grep -n \"sharp\" package.json package-lock.json)"
+    ]
+  }
+}

@@ -13,9 +13,20 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { User as UserIcon, Edit, Trash2 } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface User {
-  _id: string;
+  id: number;
   username: string;
   email: string;
   role: 'user' | 'admin';
@@ -51,12 +62,22 @@ export default function ManageUsersPage() {
     fetchUsers();
   }, []);
 
-  const handleEdit = (userId: string) => {
+  const handleEdit = (userId: number) => {
     toast.info(`Edit user ${userId} - functionality coming soon!`);
   };
 
-  const handleDelete = (userId: string) => {
-    toast.info(`Delete user ${userId} - functionality coming soon!`);
+  const handleDelete = async (userId: number) => {
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete user');
+      }
+      toast.success('User deleted');
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete user');
+    }
   };
 
   return (
@@ -96,8 +117,8 @@ export default function ManageUsersPage() {
               </TableRow>
             ) : (
               users.map((user) => (
-                <TableRow key={user._id} className="border-admin-border/50 hover:bg-admin-hover-bg">
-                  <TableCell className="font-medium text-admin-text-primary">{user._id.substring(0, 6)}...</TableCell>
+                <TableRow key={user.id} className="border-admin-border/50 hover:bg-admin-hover-bg">
+                  <TableCell className="font-medium text-admin-text-primary">{user.id}</TableCell>
                   <TableCell className="text-admin-text-primary flex items-center">
                     <UserIcon className="h-4 w-4 mr-2 text-admin-accent" /> {user.username}
                   </TableCell>
@@ -107,19 +128,34 @@ export default function ManageUsersPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleEdit(user._id)}
+                      onClick={() => handleEdit(user.id)}
                       className="text-admin-accent hover:bg-admin-hover-bg mr-2"
                     >
                       <Edit className="h-5 w-5" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(user._id)}
-                      className="text-destructive hover:bg-destructive/20"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:bg-destructive/20"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete <strong>{user.username}</strong>. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(user.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))
