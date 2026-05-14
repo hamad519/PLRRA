@@ -18,6 +18,7 @@ export async function GET() {
         championMoments: settings.championMoments ?? [],
         heroSlides: settings.heroSlides ?? [],
         accountDetails: settings.accountDetails ?? { bankName: '', accountTitle: '', accountNumber: '', iban: '', branchCode: '' },
+        aims: settings.aims ?? [],
       },
     });
   } catch (error: any) {
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
     if (body.championMoments !== undefined) data.championMoments = body.championMoments;
     if (body.heroSlides !== undefined) data.heroSlides = body.heroSlides;
     if (body.accountDetails !== undefined) data.accountDetails = body.accountDetails;
+    if (body.aims !== undefined) data.aims = body.aims;
 
     const existing = await prisma.siteSettings.findFirst();
     const settings = existing
@@ -59,6 +61,7 @@ export async function POST(req: Request) {
         championMoments: settings.championMoments ?? [],
         heroSlides: settings.heroSlides ?? [],
         accountDetails: settings.accountDetails ?? { bankName: '', accountTitle: '', accountNumber: '', iban: '', branchCode: '' },
+        aims: settings.aims ?? [],
       },
     });
   } catch (error: any) {

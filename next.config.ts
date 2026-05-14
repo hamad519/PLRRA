@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
     },
   },
 
+  async rewrites() {
+    return [
+      {
+        source: "/uploads/:path*",
+        destination: "/api/uploads/:path*",
+      },
+    ];
+  },
+
   webpack: (config, { dev }) => {
     if (dev) {
       config.module.rules.push({

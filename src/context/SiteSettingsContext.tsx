@@ -19,6 +19,7 @@ interface SiteSettings {
   };
   championMoments?: Array<{ title: string; imageBase64: string }>;
   heroSlides?: Array<{ title: string; subtitle: string; description: string; imageBase64: string }>;
+  aims?: Array<{ title: string; description: string; iconName?: string }>;
 }
 
 interface SiteSettingsContextType {

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout, Rss, MessageSquareQuote, Globe, Crown, Image as ImageIcon } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout, Rss, MessageSquareQuote, Globe, Crown, Image as ImageIcon, History as HistoryIcon } from 'lucide-react';
 
 export const ADMIN_NAV_LINKS = [
   {
@@ -95,6 +95,15 @@ export const ADMIN_NAV_LINKS = [
     submenus: [
       { name: "Add Achievement", href: "/admin/achievements/add" },
       { name: "Manage Achievements", href: "/admin/achievements/manage" },
+    ]
+  },
+  {
+    name: "History",
+    href: "/admin/history",
+    icon: HistoryIcon,
+    submenus: [
+      { name: "Add History Section", href: "/admin/history/add" },
+      { name: "Manage History", href: "/admin/history/manage" },
     ]
   },
   {

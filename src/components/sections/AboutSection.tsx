@@ -3,12 +3,33 @@
 import React from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Target, Users, Handshake, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Target, Users, Handshake, ShieldCheck, ArrowRight, Trophy, Star, Flag, Globe, Award, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Reveal } from '@/components/animations/Reveal';
 import { cn } from '@/lib/utils';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const AIM_ICON_MAP: Record<string, LucideIcon> = {
+  Target,
+  Users,
+  Handshake,
+  ShieldCheck,
+  Trophy,
+  Star,
+  Flag,
+  Globe,
+  Award,
+};
+
+const AIM_COLORS = ['bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500'];
+
+const FALLBACK_AIMS = [
+  { iconName: 'Target', title: 'Development', description: 'Encouraging participation and growth in the sport of Long-Range Rifle Shooting across Pakistan.' },
+  { iconName: 'Users', title: 'Representation', description: "Organizing and facilitating Pakistan's presence at prestigious international shooting events." },
+  { iconName: 'Handshake', title: 'Collaboration', description: 'Liaising with national and international stakeholders to maintain high standards of conduct.' },
+  { iconName: 'ShieldCheck', title: 'Safety & Fair Play', description: 'Promoting safe practices and ensuring fair competition at every event we organize.' },
+];
 
 export const AboutSection = () => {
   const { settings, loading } = useSiteSettings();
@@ -44,12 +65,7 @@ export const AboutSection = () => {
     );
   }
 
-  const aims = [
-    { icon: Target, title: "Development", text: "Encouraging participation and growth in the sport of Long-Range Rifle Shooting across Pakistan.", color: "bg-blue-500" },
-    { icon: Users, title: "Representation", text: "Organizing and facilitating Pakistan's presence at prestigious international shooting events.", color: "bg-purple-500" },
-    { icon: Handshake, title: "Collaboration", text: "Liaising with national and international stakeholders to maintain high standards of conduct.", color: "bg-pink-500" },
-    { icon: ShieldCheck, title: "Safety & Fair Play", text: "Promoting safe practices and ensuring fair competition at every event we organize.", color: "bg-emerald-500" },
-  ];
+  const aims = (settings?.aims && settings.aims.length > 0) ? settings.aims : FALLBACK_AIMS;
 
   return (
     <section className="bg-plra-bg-soft py-24 px-4 md:px-8 overflow-hidden">
@@ -117,17 +133,21 @@ export const AboutSection = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {aims.map((aim, index) => (
-            <Reveal key={index} delay={index * 0.1} direction="up">
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 h-full group">
-                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg", aim.color)}>
-                  <aim.icon size={28} />
+          {aims.map((aim, index) => {
+            const Icon = AIM_ICON_MAP[aim.iconName || ''] || Target;
+            const color = AIM_COLORS[index % AIM_COLORS.length];
+            return (
+              <Reveal key={index} delay={index * 0.1} direction="up">
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 h-full group">
+                  <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg', color)}>
+                    <Icon size={28} />
+                  </div>
+                  <h3 className="text-xl font-black text-plra-black mb-4">{aim.title}</h3>
+                  <p className="text-gray-500 leading-relaxed">{aim.description}</p>
                 </div>
-                <h3 className="text-xl font-black text-plra-black mb-4">{aim.title}</h3>
-                <p className="text-gray-500 leading-relaxed">{aim.text}</p>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>

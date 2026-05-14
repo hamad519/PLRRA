@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Trophy } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Reveal } from '@/components/animations/Reveal';
 import { HierarchicalBulletsField, HierarchicalBullet } from '@/components/forms/HierarchicalBulletsField';
 
@@ -20,15 +20,49 @@ const formSchema = z.object({
   sortOrder: z.number().optional(),
 });
 
-export default function AddAchievementPage() {
+export default function EditAchievementPage() {
+  const params = useParams();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [bullets, setBullets] = useState<HierarchicalBullet[]>([{ text: '', children: [] }]);
+  const id = String(params?.id ?? '');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [bullets, setBullets] = useState<HierarchicalBullet[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { year: '', title: '', sortOrder: 0 },
   });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/admin/achievements/${id}`);
+        const data = await res.json();
+        if (data.success) {
+          form.reset({
+            year: data.data.year || '',
+            title: data.data.title || '',
+            sortOrder: data.data.sortOrder ?? 0,
+          });
+          const raw = Array.isArray(data.data.bullets) ? data.data.bullets : [];
+          setBullets(
+            raw.map((b: any) => ({
+              text: typeof b?.text === 'string' ? b.text : '',
+              children: Array.isArray(b?.children) ? b.children.map((c: any) => String(c ?? '')) : [],
+            }))
+          );
+        } else {
+          toast.error(data.message || 'Failed to load');
+          router.push('/admin/achievements/manage');
+        }
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to load');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (id) load();
+  }, [id, form, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const cleanedBullets = bullets
@@ -43,10 +77,10 @@ export default function AddAchievementPage() {
       return;
     }
 
-    setIsLoading(true);
+    setIsSaving(true);
     try {
-      const res = await fetch('/api/admin/achievements', {
-        method: 'POST',
+      const res = await fetch(`/api/admin/achievements/${id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           year: values.year || '',
@@ -57,7 +91,7 @@ export default function AddAchievementPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success('Achievement added!');
+        toast.success('Achievement updated!');
         router.push('/admin/achievements/manage');
       } else {
         toast.error(data.message || 'Failed');
@@ -65,27 +99,26 @@ export default function AddAchievementPage() {
     } catch (error: any) {
       toast.error(error.message || 'Failed');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   }
+
+  if (isLoading) return <div className="text-center py-20 text-admin-text-secondary">Loading achievement...</div>;
 
   return (
     <div className="space-y-10">
       <header>
         <Reveal direction="down">
           <h1 className="text-4xl font-black text-admin-text-primary tracking-tight">
-            Add <span className="text-admin-accent">Achievement</span>
+            Edit <span className="text-admin-accent">Achievement</span>
           </h1>
-          <p className="text-admin-text-secondary font-medium mt-1">
-            Add a year of international achievement. Use bullets and optional sub-bullets to capture nested details.
-          </p>
         </Reveal>
       </header>
 
       <Card className="max-w-3xl mx-auto bg-white border-admin-border shadow-xl rounded-[2rem]">
         <CardHeader className="p-8 bg-admin-bg/50 border-b border-admin-border">
           <CardTitle className="text-2xl font-black flex items-center gap-3">
-            <Trophy className="text-admin-accent" /> New Achievement
+            <Trophy className="text-admin-accent" /> Update Achievement
           </CardTitle>
         </CardHeader>
         <CardContent className="p-8">
@@ -131,7 +164,7 @@ export default function AddAchievementPage() {
                   <FormItem>
                     <FormLabel className="font-bold">Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., International Breakthrough" {...field} className="bg-admin-bg border-none h-12 rounded-xl" />
+                      <Input {...field} className="bg-admin-bg border-none h-12 rounded-xl" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -140,8 +173,8 @@ export default function AddAchievementPage() {
 
               <HierarchicalBulletsField value={bullets} onChange={setBullets} />
 
-              <Button type="submit" disabled={isLoading} className="w-full py-8 rounded-xl bg-admin-accent text-white font-black uppercase tracking-widest">
-                {isLoading ? 'Saving...' : 'Save Achievement'}
+              <Button type="submit" disabled={isSaving} className="w-full py-8 rounded-xl bg-admin-accent text-white font-black uppercase tracking-widest">
+                {isSaving ? 'Saving...' : 'Update Achievement'}
               </Button>
             </form>
           </Form>
