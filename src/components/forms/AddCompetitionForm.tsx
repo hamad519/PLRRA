@@ -287,7 +287,7 @@ export const AddCompetitionForm = () => {
                   <FormMessage />
                   {mainImagePreview && (
                     <div className="relative w-32 h-20 mt-2 rounded-md overflow-hidden border border-admin-border">
-                      <Image src={mainImagePreview} alt="Main Image Preview" layout="fill" objectFit="cover" />
+                      <Image src={mainImagePreview} alt="Main Image Preview" layout="fill" objectFit="cover" unoptimized />
                       <Button
                         type="button"
                         variant="ghost"
@@ -336,7 +336,7 @@ export const AddCompetitionForm = () => {
                     <div className="mt-2 grid grid-cols-3 gap-2">
                       {galleryImagePreviews.map((preview, index) => (
                         <div key={index} className="relative w-full h-20 rounded-md overflow-hidden border border-admin-border">
-                          <Image src={preview} alt={`Gallery Image Preview ${index + 1}`} layout="fill" objectFit="cover" />
+                          <Image src={preview} alt={`Gallery Image Preview ${index + 1}`} layout="fill" objectFit="cover" unoptimized />
                           <Button
                             type="button"
                             variant="ghost"
