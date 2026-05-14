@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: false,
 
+  images: {
+    unoptimized: true,
+  },
+
   serverExternalPackages: ["pdf-parse", "mammoth", "@prisma/client"],
 
   experimental: {
