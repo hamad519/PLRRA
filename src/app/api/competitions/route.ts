@@ -14,6 +14,7 @@ export async function GET() {
         location: true,
         mainImageBase64: true,
         galleryImagesBase64: true,
+        galleryMedia: true,
         description: true,
       },
     });

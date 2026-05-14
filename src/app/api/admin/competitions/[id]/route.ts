@@ -25,7 +25,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!numericId) return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
 
   try {
-    const { title, fromDate, toDate, location, description, mainImageBase64, galleryImagesBase64 } = await req.json();
+    const { title, fromDate, toDate, location, description, mainImageBase64, galleryImagesBase64, galleryMedia } = await req.json();
 
     if (!title || !fromDate || !toDate || !location || !mainImageBase64) {
       return NextResponse.json({ message: 'Title, from date, to date, location, and main image are required' }, { status: 400 });
@@ -41,6 +41,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         description: description || '',
         mainImageBase64,
         galleryImagesBase64: galleryImagesBase64 ?? [],
+        galleryMedia: galleryMedia ?? [],
       },
     });
 
@@ -61,7 +62,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   try {
     const competition = await prisma.competition.findUnique({
       where: { id: numericId },
-      select: { mainImageBase64: true, galleryImagesBase64: true },
+      select: { mainImageBase64: true, galleryImagesBase64: true, galleryMedia: true },
     });
     if (!competition) {
       return NextResponse.json({ success: false, message: 'Competition not found' }, { status: 404 });
@@ -71,6 +72,11 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
     await deleteUploadedFile(competition.mainImageBase64);
     await deleteUploadedFiles(competition.galleryImagesBase64);
+    const media = Array.isArray(competition.galleryMedia) ? competition.galleryMedia : [];
+    const mediaUrls = media
+      .map((m: any) => (m && typeof m === 'object' ? m.url : null))
+      .filter((u: any): u is string => typeof u === 'string');
+    await deleteUploadedFiles(mediaUrls);
 
     return NextResponse.json({ success: true, message: 'Competition deleted successfully' }, { status: 200 });
   } catch (error: any) {

@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Form,
   FormControl,
@@ -18,37 +17,33 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Upload, XCircle, PlayCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { AdminDatePicker } from '@/components/ui/AdminDatePicker';
 import { uploadImage } from '@/lib/uploadImage';
 
-const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB
-const MAX_VIDEO_SIZE = 25 * 1024 * 1024; // 25MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 25 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
 
-const fileSchema = z.any()
-  .refine((file) => file?.length > 0, "Main image is required.")
-  .refine((file) => file?.[0]?.size <= MAX_IMAGE_SIZE, `Max file size is 20MB.`)
+const mainImageSchema = z.any()
+  .refine((file) => file?.length > 0, 'Main image is required.')
+  .refine((file) => file?.[0]?.size <= MAX_IMAGE_SIZE, 'Max file size is 20MB.')
   .refine(
     (file) => ACCEPTED_IMAGE_TYPES.includes(file?.[0]?.type),
-    "Only .jpg, .jpeg, .png, .webp formats are supported."
+    'Only .jpg, .jpeg, .png, .webp formats are supported.'
   );
 
 const formSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters." }),
-  fromDate: z.date({ required_error: "From date is required." }),
-  toDate: z.date({ required_error: "To date is required." }),
-  location: z.string().min(3, { message: "Location must be at least 3 characters." }),
-  mainImage: fileSchema,
-  description: z.string().optional(),
+  title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
+  date: z.date({ required_error: 'Event date is required.' }),
+  mainImage: mainImageSchema,
 });
 
 type MediaItem = { type: 'image' | 'video'; url: string };
 
-export const AddCompetitionForm = () => {
+export const AddNationalGalleryEventForm = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
@@ -57,14 +52,9 @@ export const AddCompetitionForm = () => {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      location: "",
-      description: "",
-    },
+    defaultValues: { title: '' },
   });
 
-  // For preview only (not sent to server) — quick base64 read
   const fileToPreviewDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -73,15 +63,10 @@ export const AddCompetitionForm = () => {
       reader.onerror = (error) => reject(error);
     });
 
-  // Upload to /api/upload — returns public path like /uploads/competitions/xxx.jpg
-  const uploadCompetitionImage = (file: File, isMain = false): Promise<string> =>
-    uploadImage(file, {
-      folder: 'competitions',
-      maxSizeMB: isMain ? 0.5 : 0.25,
-      maxWidthOrHeight: isMain ? 1920 : 1280,
-    });
-
-  const handleMainImageChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
+  const handleMainImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    onChange: (...event: any[]) => void
+  ) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       const preview = await fileToPreviewDataUrl(file);
@@ -95,6 +80,7 @@ export const AddCompetitionForm = () => {
 
   const handleGalleryMediaChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) return;
+
     const files = Array.from(event.target.files);
     setUploadingMedia(true);
     try {
@@ -115,13 +101,13 @@ export const AddCompetitionForm = () => {
           continue;
         }
         const url = await uploadImage(file, {
-          folder: 'competitions',
-          maxSizeMB: 0.25,
-          maxWidthOrHeight: 1280,
+          folder: 'national-gallery',
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 1920,
         });
         uploaded.push({ type: isVideo ? 'video' : 'image', url });
       }
-      setGalleryMedia(prev => [...prev, ...uploaded]);
+      setGalleryMedia((prev) => [...prev, ...uploaded]);
     } catch (err: any) {
       toast.error(err.message || 'Failed to upload media');
     } finally {
@@ -132,34 +118,32 @@ export const AddCompetitionForm = () => {
 
   const removeMainImage = () => {
     setMainImagePreview(null);
-    form.setValue('mainImage', null); // Clear the form field value
-    const input = document.getElementById('main-image-upload') as HTMLInputElement;
-    if (input) input.value = ''; // Clear the file input
+    form.setValue('mainImage', null);
+    const input = document.getElementById('ng-main-image-upload') as HTMLInputElement;
+    if (input) input.value = '';
   };
 
   const removeGalleryMedia = (indexToRemove: number) => {
-    setGalleryMedia(prev => prev.filter((_, index) => index !== indexToRemove));
+    setGalleryMedia((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const mainImageBase64 = values.mainImage && values.mainImage.length > 0
-        ? await uploadCompetitionImage(values.mainImage[0], true)
-        : undefined;
+      const mainImageBase64 = await uploadImage(values.mainImage[0], {
+        folder: 'national-gallery',
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 1920,
+      });
 
       const payload = {
         title: values.title,
-        fromDate: values.fromDate.toISOString(),
-        toDate: values.toDate.toISOString(),
-        location: values.location,
-        description: values.description,
+        date: values.date.toISOString(),
         mainImageBase64,
-        galleryImagesBase64: [],
         galleryMedia,
       };
 
-      const res = await fetch('/api/admin/competitions', {
+      const res = await fetch('/api/admin/national-gallery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -168,17 +152,17 @@ export const AddCompetitionForm = () => {
       const data = await res.json();
 
       if (res.ok) {
-        toast.success(data.message || "Competition added successfully!");
+        toast.success(data.message || 'Gallery event added successfully!');
         form.reset();
         setMainImagePreview(null);
         setGalleryMedia([]);
-        router.push('/admin/competitions/manage');
+        router.push('/admin/national-gallery/manage');
       } else {
-        toast.error(data.message || 'Failed to add competition.');
+        toast.error(data.message || 'Failed to add gallery event.');
       }
-    } catch (error) {
-      console.error('Add competition error:', error);
-      toast.error('Network error or server unreachable.');
+    } catch (error: any) {
+      console.error('Add gallery event error:', error);
+      toast.error(error.message || 'Network error or server unreachable.');
     } finally {
       setIsLoading(false);
     }
@@ -188,10 +172,10 @@ export const AddCompetitionForm = () => {
     <Card className="bg-admin-card-bg border border-admin-border text-admin-text-primary shadow-xl rounded-xl p-6 max-w-2xl mx-auto">
       <CardHeader className="pb-6 text-center">
         <CardTitle className="text-admin-accent text-lg font-semibold uppercase tracking-wider mb-2">
-          New Competition
+          New Gallery Event
         </CardTitle>
         <h2 className="text-4xl md:text-5xl font-extrabold text-admin-text-primary">
-          Add Competition
+          Add National Gallery Event
         </h2>
       </CardHeader>
       <CardContent>
@@ -202,82 +186,61 @@ export const AddCompetitionForm = () => {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-admin-text-primary text-lg">Title</FormLabel>
+                  <FormLabel className="text-admin-text-primary text-lg">Event Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., National Long Range Championship" {...field} className="bg-admin-input-bg border-admin-input-border text-admin-text-primary focus:border-admin-accent placeholder:text-admin-text-secondary" />
+                    <Input
+                      placeholder="e.g., 42nd PARA Cen Meet 2022"
+                      {...field}
+                      className="bg-admin-input-bg border-admin-input-border text-admin-text-primary focus:border-admin-accent placeholder:text-admin-text-secondary"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="fromDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel className="text-admin-text-primary text-lg">From Date</FormLabel>
-                    <FormControl>
-                      <AdminDatePicker
-                        value={field.value}
-                        onChange={(date) => field.onChange(date)}
-                        placeholder="From date"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="toDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel className="text-admin-text-primary text-lg">To Date</FormLabel>
-                    <FormControl>
-                      <AdminDatePicker
-                        value={field.value}
-                        onChange={(date) => field.onChange(date)}
-                        placeholder="To date"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+
             <FormField
               control={form.control}
-              name="location"
+              name="date"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-admin-text-primary text-lg">Location</FormLabel>
+                <FormItem className="flex flex-col">
+                  <FormLabel className="text-admin-text-primary text-lg">Event Date</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Lahore Shooting Range, Pakistan" {...field} className="bg-admin-input-bg border-admin-input-border text-admin-text-primary focus:border-admin-accent placeholder:text-admin-text-secondary" />
+                    <AdminDatePicker
+                      value={field.value}
+                      onChange={(date) => field.onChange(date)}
+                      placeholder="Select event date"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {/* Main Image Upload Field (now required) */}
+
             <FormField
               control={form.control}
               name="mainImage"
               render={({ field: { value, onChange, ...fieldProps } }) => (
                 <FormItem>
-                  <FormLabel className="text-admin-text-primary text-lg">Main Image (Upload)</FormLabel>
+                  <FormLabel className="text-admin-text-primary text-lg">Main Image</FormLabel>
                   <FormControl>
                     <div className="flex items-center justify-center w-full">
-                      <label htmlFor="main-image-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-admin-input-bg border-admin-input-border hover:border-admin-accent transition-colors">
+                      <label
+                        htmlFor="ng-main-image-upload"
+                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-admin-input-bg border-admin-input-border hover:border-admin-accent transition-colors"
+                      >
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                           <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
-                          <p className="mb-2 text-sm text-admin-text-secondary"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                          <p className="mb-2 text-sm text-admin-text-secondary">
+                            <span className="font-semibold">Click to upload</span> or drag and drop
+                          </p>
                           <p className="text-xs text-admin-text-secondary">PNG, JPG, WEBP (MAX. 20MB)</p>
                           {value?.[0] && <p className="text-xs text-admin-accent mt-1">{value[0].name}</p>}
                         </div>
                         <Input
-                          id="main-image-upload"
+                          id="ng-main-image-upload"
                           type="file"
+                          accept="image/*"
                           className="hidden"
                           {...fieldProps}
                           onChange={(e) => handleMainImageChange(e, onChange)}
@@ -288,7 +251,13 @@ export const AddCompetitionForm = () => {
                   <FormMessage />
                   {mainImagePreview && (
                     <div className="relative w-32 h-20 mt-2 rounded-md overflow-hidden border border-admin-border">
-                      <Image src={mainImagePreview} alt="Main Image Preview" layout="fill" objectFit="cover" unoptimized />
+                      <Image
+                        src={mainImagePreview}
+                        alt="Main Image Preview"
+                        layout="fill"
+                        objectFit="cover"
+                        unoptimized
+                      />
                       <Button
                         type="button"
                         variant="ghost"
@@ -303,22 +272,30 @@ export const AddCompetitionForm = () => {
                 </FormItem>
               )}
             />
-            {/* Gallery Media (images + videos) */}
+
             <div>
               <label className="text-admin-text-primary text-lg block mb-2">
-                Gallery Images &amp; Videos (Optional)
+                Additional Images &amp; Videos (Optional)
               </label>
               <div className="flex items-center justify-center w-full">
-                <label htmlFor="gallery-media-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-admin-input-bg border-admin-input-border hover:border-admin-accent transition-colors">
+                <label
+                  htmlFor="ng-gallery-media-upload"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-admin-input-bg border-admin-input-border hover:border-admin-accent transition-colors"
+                >
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
                     <p className="mb-2 text-sm text-admin-text-secondary">
-                      <span className="font-semibold">{uploadingMedia ? 'Uploading…' : 'Click to upload'}</span> images and videos
+                      <span className="font-semibold">
+                        {uploadingMedia ? 'Uploading…' : 'Click to upload'}
+                      </span>{' '}
+                      images and videos
                     </p>
-                    <p className="text-xs text-admin-text-secondary">Images: PNG/JPG/WEBP (20MB) • Videos: MP4/WEBM/MOV (25MB)</p>
+                    <p className="text-xs text-admin-text-secondary">
+                      Images: PNG/JPG/WEBP (20MB) • Videos: MP4/WEBM/MOV (25MB)
+                    </p>
                   </div>
                   <Input
-                    id="gallery-media-upload"
+                    id="ng-gallery-media-upload"
                     type="file"
                     multiple
                     accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/webm,video/ogg,video/quicktime"
@@ -331,9 +308,18 @@ export const AddCompetitionForm = () => {
               {galleryMedia.length > 0 && (
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   {galleryMedia.map((item, index) => (
-                    <div key={index} className="relative w-full h-20 rounded-md overflow-hidden border border-admin-border bg-black">
+                    <div
+                      key={index}
+                      className="relative w-full h-20 rounded-md overflow-hidden border border-admin-border bg-black"
+                    >
                       {item.type === 'image' ? (
-                        <Image src={item.url} alt={`Media ${index + 1}`} layout="fill" objectFit="cover" unoptimized />
+                        <Image
+                          src={item.url}
+                          alt={`Media ${index + 1}`}
+                          layout="fill"
+                          objectFit="cover"
+                          unoptimized
+                        />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-white">
                           <video src={item.url} className="absolute inset-0 w-full h-full object-cover" muted />
@@ -354,25 +340,14 @@ export const AddCompetitionForm = () => {
                 </div>
               )}
             </div>
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-admin-text-primary text-lg">Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Brief description of the competition"
-                      className="resize-y min-h-[80px] bg-admin-input-bg border-admin-input-border text-admin-text-primary focus:border-admin-accent placeholder:text-admin-text-secondary"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" variant="default" className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading || uploadingMedia}>
-              {isLoading ? 'Adding...' : 'Add Competition'}
+
+            <Button
+              type="submit"
+              variant="default"
+              className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90"
+              disabled={isLoading || uploadingMedia}
+            >
+              {isLoading ? 'Adding...' : 'Add Gallery Event'}
             </Button>
           </form>
         </Form>

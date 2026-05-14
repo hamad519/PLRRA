@@ -22,6 +22,7 @@ interface Competition {
   location: string;
   mainImageBase64: string;
   galleryImagesBase64?: string[];
+  galleryMedia?: { type: 'image' | 'video'; url: string }[];
   description?: string;
 }
 
@@ -146,7 +147,10 @@ export const CompetitionCarouselSection = () => {
             <div className="overflow-hidden py-8 -my-8" ref={emblaRef}>
               <div className="flex -ml-6">
                 {competitions.map((comp) => {
-                  const totalImages = 1 + (comp.galleryImagesBase64?.length ?? 0);
+                  const totalImages =
+                    1 +
+                    (comp.galleryImagesBase64?.length ?? 0) +
+                    (comp.galleryMedia?.length ?? 0);
                   const dateLabel = formatDateRange(comp.fromDate, comp.toDate, comp.date);
 
                   return (
@@ -170,7 +174,7 @@ export const CompetitionCarouselSection = () => {
                           {totalImages > 1 && (
                             <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                               <Images size={13} />
-                              {totalImages} photos
+                              {totalImages} items
                             </div>
                           )}
 
