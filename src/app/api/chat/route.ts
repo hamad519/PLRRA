@@ -3,21 +3,33 @@ import OpenAI from 'openai';
 import { getApplicationContext } from '@/lib/ai-context';
 
 export async function POST(req: Request) {
+  let messages: any[] = [];
   try {
-    const { messages } = await req.json();
-    
-    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    ({ messages } = await req.json());
+  } catch {
+    return NextResponse.json({ role: 'bot', content: "Invalid request body." }, { status: 400 });
+  }
 
-    if (!GROQ_API_KEY) {
-      return NextResponse.json({ 
-        role: 'bot', 
-        content: "Missing GROQ_API_KEY. Please add it to your .env file." 
-      }, { status: 500 });
-    }
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY) {
+    return NextResponse.json({
+      role: 'bot',
+      content: "The assistant isn't configured yet — GROQ_API_KEY is missing from the server's .env file. Please add it and restart the dev server.",
+    }, { status: 500 });
+  }
 
-    // 1. Extract text from your PDFs and Docs based on the user's query
-    const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop()?.content || '';
-    const siteContext = await getApplicationContext(lastUserMessage);
+  // 1. Extract text from your PDFs and Docs based on the user's query
+  const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop()?.content || '';
+
+  let siteContext = '';
+  try {
+    siteContext = await getApplicationContext(lastUserMessage);
+  } catch (err: any) {
+    console.error('[chat] Failed to build site context:', err);
+    siteContext = 'Basic PLRA information: National governing body for long range shooting in Pakistan.';
+  }
+
+  try {
 
     // 2. Create a forceful system prompt
     const systemPrompt = `You are the official PLRA (Pakistan Long Range Rifle Association) AI assistant. Your name is **PLRA Assistant**. You are friendly, professional, and helpful.
@@ -80,10 +92,22 @@ ${siteContext}`;
     });
 
   } catch (error: any) {
-    console.error("Chat API Error:", error);
-    return NextResponse.json({ 
-      role: 'bot', 
-      content: "I had trouble reading the document data. Please check if your Groq API key is valid and your documents are in the correct folder." 
-    }, { status: 500 });
+    const status = error?.status ?? error?.response?.status;
+    const code = error?.code ?? error?.response?.data?.error?.code;
+    const apiMessage = error?.response?.data?.error?.message || error?.message;
+    console.error('[chat] Groq API error:', { status, code, message: apiMessage });
+
+    let userMessage = "Sorry, the assistant ran into a problem. Please try again in a moment.";
+    if (status === 401 || /invalid.*api.*key|unauthorized/i.test(apiMessage || '')) {
+      userMessage = "The assistant's API key was rejected. Please check that GROQ_API_KEY in your .env file is valid.";
+    } else if (status === 429 || code === 'rate_limit_exceeded') {
+      userMessage = "The assistant is currently rate-limited. Please wait a moment and try again.";
+    } else if (status === 404 || /model.*not.*found/i.test(apiMessage || '')) {
+      userMessage = "The configured AI model is unavailable. Please contact the site administrator.";
+    } else if (/timeout|ECONN|ENOTFOUND|fetch failed/i.test(apiMessage || '')) {
+      userMessage = "Couldn't reach the AI service. Please check your internet connection and try again.";
+    }
+
+    return NextResponse.json({ role: 'bot', content: userMessage }, { status: 500 });
   }
 }

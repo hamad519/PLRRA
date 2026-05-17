@@ -610,9 +610,9 @@ export const EventRegistrationForm = ({ eventId, eventTitle }: EventRegistration
             </Card>
           </Reveal>
 
-          <Button 
-            type="submit" 
-            className="w-full py-10 rounded-[2rem] bg-plra-black hover:bg-plra-black/90 text-white text-xl font-black uppercase tracking-widest shadow-2xl transition-all hover:scale-[1.02] disabled:opacity-50" 
+          <Button
+            type="submit"
+            className="mx-auto flex h-11 px-8 rounded-lg bg-plra-black hover:bg-plra-black/90 text-white text-sm font-semibold shadow-md transition-colors disabled:opacity-50 items-center justify-center"
             disabled={isLoading}
           >
             {isLoading ? "Processing..." : "Register"}

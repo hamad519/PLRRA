@@ -29,14 +29,15 @@ export default async function EventDetailPage({ params }: EventPageProps) {
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="relative h-[50vh] md:h-[60vh] w-full bg-slate-950 overflow-hidden flex items-center">
-        <Image
-          src={event.mainImageBase64}
-          alt={event.title}
-          layout="fill"
-          objectFit="cover"
-          quality={90}
-          className="z-0 opacity-40"
-        />
+        {event.mainImageBase64 && (
+          <Image
+            src={event.mainImageBase64}
+            alt={event.title}
+            fill
+            quality={90}
+            className="z-0 opacity-40 object-cover"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-slate-950 z-10"></div>
         <div className="container mx-auto px-4 md:px-8 relative z-20">
           <div className="max-w-4xl">
@@ -55,7 +56,16 @@ export default async function EventDetailPage({ params }: EventPageProps) {
               <div className="flex flex-wrap gap-8 text-gray-300">
                 <div className="flex items-center gap-3">
                   <CalendarDays className="text-plra-gold" size={24} />
-                  <span className="text-lg font-bold">{new Date(event.date).toLocaleDateString('en-US', { dateStyle: 'long' })}</span>
+                  <span className="text-lg font-bold">
+                    {(() => {
+                      const from = event.fromDate || event.date;
+                      const to = event.toDate || event.date;
+                      if (!from) return '';
+                      const fromStr = new Date(from).toLocaleDateString('en-US', { dateStyle: 'long' });
+                      if (!to || +new Date(to) === +new Date(from)) return fromStr;
+                      return `${fromStr} – ${new Date(to).toLocaleDateString('en-US', { dateStyle: 'long' })}`;
+                    })()}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <MapPin className="text-plra-accent-pink" size={24} />

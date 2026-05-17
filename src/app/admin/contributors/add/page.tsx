@@ -125,7 +125,7 @@ export default function AddContributorPage() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full py-8 rounded-xl bg-admin-accent text-white font-black uppercase tracking-widest">
+              <Button type="submit" disabled={isLoading} className="w-full h-11 rounded-lg bg-admin-accent text-white text-sm font-semibold hover:bg-admin-accent/90 transition-colors">
                 {isLoading ? "Saving..." : "Save Contributor"}
               </Button>
             </form>

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { User as UserIcon, Edit, Trash2 } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
+import Link from 'next/link';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,12 +83,17 @@ export default function ManageUsersPage() {
 
   return (
     <>
-      <h1 className="text-4xl md:text-5xl font-extrabold text-admin-text-primary text-center mb-12">
+      <h1 className="text-4xl md:text-5xl font-extrabold text-admin-text-primary text-center mb-4">
         Manage Users
       </h1>
       <p className="text-lg text-center text-admin-text-secondary mb-8">
         View and manage all registered user accounts.
       </p>
+      <div className="flex justify-end mb-6">
+        <Link href="/admin/register">
+          <Button className="bg-admin-accent text-white font-bold rounded-xl px-6">+ Add User</Button>
+        </Link>
+      </div>
 
       <div className="bg-admin-card-bg border border-admin-border rounded-xl shadow-xl overflow-hidden">
         <Table>

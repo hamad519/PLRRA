@@ -1,11 +1,20 @@
 import React from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
-import { Blog } from '@/lib/blog-data';
 import { Reveal } from '@/components/animations/Reveal';
 
+interface BlogContent {
+  id: string;
+  slug: string;
+  title: string;
+  date: string;
+  imageUrl: string;
+  shortDescription: string;
+  content: string;
+}
+
 interface SingleBlogContentSectionProps {
-  blog: Blog;
+  blog: BlogContent;
 }
 
 export const SingleBlogContentSection = ({ blog }: SingleBlogContentSectionProps) => {

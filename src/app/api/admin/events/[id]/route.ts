@@ -25,20 +25,21 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!numericId) return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
 
   try {
-    const { title, date, location, description, mainImageBase64 } = await req.json();
+    const { title, fromDate, toDate, location, description, mainImageBase64 } = await req.json();
 
-    if (!title || !date || !location || !mainImageBase64) {
-      return NextResponse.json({ message: 'Title, date, location, and main image are required' }, { status: 400 });
+    if (!title || !fromDate || !toDate || !location) {
+      return NextResponse.json({ message: 'Title, from date, to date, and location are required' }, { status: 400 });
     }
 
     const event = await prisma.event.update({
       where: { id: numericId },
       data: {
         title,
-        date: new Date(date),
+        fromDate: new Date(fromDate),
+        toDate: new Date(toDate),
         location,
         description: description || '',
-        mainImageBase64,
+        mainImageBase64: mainImageBase64 || null,
       },
     });
 

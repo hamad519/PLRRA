@@ -1,25 +1,35 @@
 import { notFound } from 'next/navigation';
-import { blogs } from '@/lib/blog-data';
+import prisma from '@/lib/prisma';
 import { SingleBlogContentSection } from '@/components/sections/SingleBlogContentSection';
 import { BlogHeroSection } from '@/components/sections/BlogHeroSection';
+import { format } from 'date-fns';
+
+export const dynamic = 'force-dynamic';
 
 interface BlogPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return blogs.map((blog) => ({
-    slug: blog.slug,
-  }));
-}
-
 export default async function SingleBlogPage({ params }: BlogPageProps) {
   const { slug } = await params;
-  const blog = blogs.find((b) => b.slug === slug);
 
-  if (!blog) {
+  const row = await prisma.blog.findFirst({
+    where: { slug, isActive: true },
+  });
+
+  if (!row) {
     notFound();
   }
+
+  const blog = {
+    id: String(row.id),
+    slug: row.slug,
+    title: row.title,
+    date: format(row.date, 'PPP'),
+    imageUrl: row.imageBase64,
+    shortDescription: row.shortDescription,
+    content: row.content,
+  };
 
   return (
     <div className="min-h-screen flex flex-col">

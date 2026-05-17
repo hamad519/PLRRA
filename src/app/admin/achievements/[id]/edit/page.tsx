@@ -173,7 +173,7 @@ export default function EditAchievementPage() {
 
               <HierarchicalBulletsField value={bullets} onChange={setBullets} />
 
-              <Button type="submit" disabled={isSaving} className="w-full py-8 rounded-xl bg-admin-accent text-white font-black uppercase tracking-widest">
+              <Button type="submit" disabled={isSaving} className="w-full h-11 rounded-lg bg-admin-accent text-white text-sm font-semibold hover:bg-admin-accent/90 transition-colors">
                 {isSaving ? 'Saving...' : 'Update Achievement'}
               </Button>
             </form>

@@ -155,7 +155,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
                 )}
               />
             )}
-            <Button type="submit" variant="default" className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading}>
+            <Button type="submit" variant="default" className="w-full h-10 rounded-lg text-sm font-semibold shadow-sm transition-colors bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading}>
               {isLoading ? 'Processing...' : (type === 'login' ? 'Login' : 'Register')}
             </Button>
           </form>

@@ -39,7 +39,6 @@ export const FOOTER_LINKS = [
   {
     title: "Resources",
     links: [
-      { name: "Training & Education", href: "/training-education" },
       { name: "Rules & Regulations", href: "/rules-regulations" },
       { name: "Press Release", href: "/press-release" },
       { name: "Blogs/ News", href: "/blogs-news" },

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { deleteUploadedFile } from '@/lib/deleteUploadedFile';
 
 const DEFAULT_STATS = { nationalRecords: '0', internationalMedals: '0', eliteShooters: '0', growthRate: '0%' };
 
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
     const scalarFields = [
       'address', 'contactNo', 'email', 'workingHours',
       'facebookLink', 'instagramLink', 'isMaintenanceMode', 'plraIntro',
+      'constitutionPdfBase64',
     ];
     for (const key of scalarFields) {
       if (body[key] !== undefined) data[key] = body[key];
@@ -51,6 +53,15 @@ export async function POST(req: Request) {
     const settings = existing
       ? await prisma.siteSettings.update({ where: { id: existing.id }, data })
       : await prisma.siteSettings.create({ data });
+
+    // If the constitution PDF was replaced or cleared, delete the old file from /uploads/
+    if (
+      existing?.constitutionPdfBase64 &&
+      body.constitutionPdfBase64 !== undefined &&
+      existing.constitutionPdfBase64 !== body.constitutionPdfBase64
+    ) {
+      await deleteUploadedFile(existing.constitutionPdfBase64);
+    }
 
     return NextResponse.json({
       success: true,

@@ -22,6 +22,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 }
 
+function extractMediaUrls(media: unknown): string[] {
+  if (!Array.isArray(media)) return [];
+  return media
+    .map((m: any) => (m && typeof m === 'object' ? m.url : null))
+    .filter((u: any): u is string => typeof u === 'string');
+}
+
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const numericId = parseId(id);
@@ -37,6 +44,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       );
     }
 
+    const existing = await prisma.nationalGalleryEvent.findUnique({
+      where: { id: numericId },
+      select: { mainImageBase64: true, galleryMedia: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ success: false, message: 'Gallery event not found' }, { status: 404 });
+    }
+
     const event = await prisma.nationalGalleryEvent.update({
       where: { id: numericId },
       data: {
@@ -46,6 +61,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         galleryMedia: galleryMedia ?? [],
       },
     });
+
+    // Delete orphaned files (in old record but not in the new payload)
+    if (existing.mainImageBase64 && existing.mainImageBase64 !== mainImageBase64) {
+      await deleteUploadedFile(existing.mainImageBase64);
+    }
+
+    const newUrls = new Set<string>(extractMediaUrls(galleryMedia));
+    const oldUrls = extractMediaUrls(existing.galleryMedia);
+    const orphaned = oldUrls.filter((u) => !newUrls.has(u));
+    if (orphaned.length) await deleteUploadedFiles(orphaned);
 
     return NextResponse.json(
       { message: 'Gallery event updated successfully', eventId: event.id, data: event },

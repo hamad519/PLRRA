@@ -17,40 +17,20 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { CalendarIcon, Upload, XCircle } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import Image from 'next/image';
-import { uploadImage } from '@/lib/uploadImage';
 import { useRouter } from 'next/navigation';
-
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-
-const fileSchema = z.any()
-  .refine((file) => file?.length > 0, "Main image is required.")
-  .refine((file) => file?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 20MB.`)
-  .refine(
-    (file) => ACCEPTED_IMAGE_TYPES.includes(file?.[0]?.type),
-    "Only .jpg, .jpeg, .png, .webp formats are supported."
-  );
+import { AdminDatePicker } from '@/components/ui/AdminDatePicker';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
-  date: z.date({
-    required_error: "Event date is required.",
-  }),
+  fromDate: z.date({ required_error: "From date is required." }),
+  toDate: z.date({ required_error: "To date is required." }),
   location: z.string().min(3, { message: "Location must be at least 3 characters." }),
-  mainImage: fileSchema,
   description: z.string().optional(),
 });
 
 export const AddUpcomingEventForm = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,58 +41,20 @@ export const AddUpcomingEventForm = () => {
     },
   });
 
-  // Local preview only (data URL, not sent to server)
-  const fileToPreviewDataUrl = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-
-  // Upload to /api/upload — returns public URL like /uploads/events/xxx.jpg
-  const uploadEventImage = (file: File): Promise<string> =>
-    uploadImage(file, { folder: 'events', maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
-
-  const handleMainImageChange = async (event: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      const preview = await fileToPreviewDataUrl(file);
-      setMainImagePreview(preview);
-      onChange(event.target.files);
-    } else {
-      setMainImagePreview(null);
-      onChange(null);
-    }
-  };
-
-  const removeMainImage = () => {
-    setMainImagePreview(null);
-    form.setValue('mainImage', null);
-    const input = document.getElementById('main-image-upload') as HTMLInputElement;
-    if (input) input.value = '';
-  };
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const mainImageBase64 = values.mainImage && values.mainImage.length > 0
-        ? await uploadEventImage(values.mainImage[0])
-        : undefined;
-
       const payload = {
         title: values.title,
-        date: values.date.toISOString(),
+        fromDate: values.fromDate.toISOString(),
+        toDate: values.toDate.toISOString(),
         location: values.location,
         description: values.description,
-        mainImageBase64: mainImageBase64,
       };
 
       const res = await fetch('/api/admin/events', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -121,8 +63,7 @@ export const AddUpcomingEventForm = () => {
       if (res.ok) {
         toast.success(data.message || "Event added successfully!");
         form.reset();
-        setMainImagePreview(null);
-        router.push('/admin/events/upcoming/manage'); // Redirect to manage page after adding
+        router.push('/admin/events/upcoming/manage');
       } else {
         toast.error(data.message || 'Failed to add event.');
       }
@@ -160,45 +101,42 @@ export const AddUpcomingEventForm = () => {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className="text-admin-text-primary text-lg">Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal bg-admin-input-bg border-admin-input-border text-admin-text-primary hover:bg-admin-hover-bg hover:text-admin-text-primary",
-                            !field.value && "text-admin-text-secondary"
-                          )}
-                        >
-                          <span className="flex items-center">
-                            <CalendarIcon className="mr-2 h-4 w-4 text-admin-accent" />
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                          </span>
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-admin-card-bg border-admin-border" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        captionLayout="dropdown" // Added this prop for year/month dropdowns
-                        fromYear={new Date().getFullYear() - 10} // Example: allow selecting up to 10 years in the past
-                        toYear={new Date().getFullYear() + 10} // Example: allow selecting up to 10 years in the future
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="fromDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="text-admin-text-primary text-lg">From Date</FormLabel>
+                    <FormControl>
+                      <AdminDatePicker
+                        value={field.value}
+                        onChange={(date) => field.onChange(date)}
+                        placeholder="From date"
                       />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="toDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="text-admin-text-primary text-lg">To Date</FormLabel>
+                    <FormControl>
+                      <AdminDatePicker
+                        value={field.value}
+                        onChange={(date) => field.onChange(date)}
+                        placeholder="To date"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="location"
@@ -209,49 +147,6 @@ export const AddUpcomingEventForm = () => {
                     <Input placeholder="e.g., Lahore Shooting Range, Pakistan" {...field} className="bg-admin-input-bg border-admin-input-border text-admin-text-primary focus:border-admin-accent placeholder:text-admin-text-secondary" />
                   </FormControl>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="mainImage"
-              render={({ field: { value, onChange, ...fieldProps } }) => (
-                <FormItem>
-                  <FormLabel className="text-admin-text-primary text-lg">Main Image (Upload)</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center justify-center w-full">
-                      <label htmlFor="main-image-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-admin-input-bg border-admin-input-border hover:border-admin-accent transition-colors">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
-                          <p className="mb-2 text-sm text-admin-text-secondary"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                          <p className="text-xs text-admin-text-secondary">PNG, JPG, WEBP (MAX. 20MB)</p>
-                          {value?.[0] && <p className="text-xs text-admin-accent mt-1">{value[0].name}</p>}
-                        </div>
-                        <Input
-                          id="main-image-upload"
-                          type="file"
-                          className="hidden"
-                          {...fieldProps}
-                          onChange={(e) => handleMainImageChange(e, onChange)}
-                        />
-                      </label>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                  {mainImagePreview && (
-                    <div className="relative w-32 h-20 mt-2 rounded-md overflow-hidden border border-admin-border">
-                      <Image src={mainImagePreview} alt="Main Image Preview" layout="fill" objectFit="cover" />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={removeMainImage}
-                        className="absolute top-0 right-0 h-6 w-6 text-red-500 hover:bg-red-900/20"
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
                 </FormItem>
               )}
             />
@@ -272,8 +167,8 @@ export const AddUpcomingEventForm = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit" variant="default" className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading}>
-              {isLoading ? 'Adding...' : 'Add Event'}
+            <Button type="submit" variant="default" className="mx-auto flex h-10 px-6 rounded-lg text-sm font-semibold shadow-sm transition-colors bg-admin-accent text-white hover:bg-admin-accent/90 items-center justify-center" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Add Event'}
             </Button>
           </form>
         </Form>

@@ -12,10 +12,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface Event {
   _id: string;
   title: string;
-  date: string;
+  fromDate?: string;
+  toDate?: string;
+  date?: string;
   location: string;
   mainImageBase64: string;
   description?: string;
+}
+
+function formatEventDate(event: Event): string {
+  const from = event.fromDate || event.date;
+  const to = event.toDate || event.date;
+  if (!from) return '';
+  const fromStr = new Date(from).toLocaleDateString('en-US', { dateStyle: 'medium' });
+  if (!to || to === from) return fromStr;
+  const toStr = new Date(to).toLocaleDateString('en-US', { dateStyle: 'medium' });
+  return `${fromStr} – ${toStr}`;
 }
 
 export const UpcomingEventsSection = () => {
@@ -103,7 +115,7 @@ export const UpcomingEventsSection = () => {
                           <div className="w-10 h-10 rounded-xl bg-plra-bg-soft flex items-center justify-center mr-4 text-plra-accent-purple">
                             <CalendarDays size={20} />
                           </div>
-                          <span>{new Date(event.date).toLocaleDateString('en-US', { dateStyle: 'medium' })}</span>
+                          <span>{formatEventDate(event)}</span>
                         </div>
                         <div className="flex items-center text-gray-600 font-medium">
                           <div className="w-10 h-10 rounded-xl bg-plra-bg-soft flex items-center justify-center mr-4 text-plra-accent-pink">
@@ -112,11 +124,6 @@ export const UpcomingEventsSection = () => {
                           <span className="truncate">{event.location}</span>
                         </div>
                       </div>
-                      <Link href={`/events/upcoming/${event._id}`} passHref>
-                        <Button className="w-full bg-plra-bg-soft hover:bg-plra-accent-purple hover:text-white text-plra-black font-bold py-6 rounded-2xl transition-all border-none mt-6">
-                          Event Details
-                        </Button>
-                      </Link>
                     </CardContent>
                   </Card>
                 </div>

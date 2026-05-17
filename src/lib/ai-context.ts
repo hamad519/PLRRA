@@ -146,7 +146,9 @@ Current Statistics:
       if (events.length > 0) {
         context += `\nUpcoming Events:\n`;
         for (const e of events) {
-          context += `- ${e.title}: ${new Date(e.date).toDateString()} at ${e.location}\n`;
+          const when = e.fromDate ?? e.date;
+          const whenStr = when ? new Date(when).toDateString() : 'TBA';
+          context += `- ${e.title}: ${whenStr} at ${e.location}\n`;
         }
       }
     }

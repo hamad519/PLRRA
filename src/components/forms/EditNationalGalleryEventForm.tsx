@@ -426,10 +426,10 @@ export const EditNationalGalleryEventForm = ({ eventId }: EditNationalGalleryEve
             <Button
               type="submit"
               variant="default"
-              className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90"
+              className="mx-auto flex h-10 px-6 rounded-lg text-sm font-semibold shadow-sm transition-colors bg-admin-accent text-white hover:bg-admin-accent/90 items-center justify-center"
               disabled={isLoading}
             >
-              {isLoading ? 'Uploading & saving...' : 'Update Gallery Event'}
+              {isLoading ? 'Saving...' : 'Update Gallery Event'}
             </Button>
           </form>
         </Form>

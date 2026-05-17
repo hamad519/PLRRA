@@ -235,12 +235,12 @@ export const SiteSettingsForm = () => {
         </div>
 
         <Reveal direction="up" delay={0.3}>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isSaving}
-            className="w-full py-10 rounded-[2rem] bg-admin-accent hover:bg-admin-accent/90 text-white text-xl font-black uppercase tracking-widest shadow-2xl transition-all hover:scale-[1.01]"
+            className="mx-auto flex h-10 px-6 rounded-lg bg-admin-accent hover:bg-admin-accent/90 text-white text-sm font-semibold shadow-sm transition-colors items-center gap-2"
           >
-            {isSaving ? "Saving Changes..." : <><Save className="mr-3" /> Save Site Settings</>}
+            {isSaving ? "Saving..." : <><Save className="h-4 w-4" /> Save Site Settings</>}
           </Button>
         </Reveal>
       </form>

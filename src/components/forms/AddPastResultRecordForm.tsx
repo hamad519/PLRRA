@@ -231,7 +231,7 @@ export const AddPastResultRecordForm = () => {
               <Button type="button" variant="outline" onClick={() => append({ name: "", details: "" })} className="w-full rounded-xl border-dashed"><PlusCircle className="mr-2 h-4 w-4" /> Add Match</Button>
             </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full py-8 rounded-xl bg-admin-accent text-white font-black uppercase tracking-widest">
+            <Button type="submit" disabled={isLoading} className="w-full h-11 rounded-lg bg-admin-accent text-white text-sm font-semibold hover:bg-admin-accent/90 transition-colors">
               {isLoading ? "Saving..." : "Save Past Result"}
             </Button>
           </form>

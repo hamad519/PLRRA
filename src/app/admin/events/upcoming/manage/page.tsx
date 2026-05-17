@@ -12,17 +12,27 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { CalendarDays, Edit, Trash2 } from 'lucide-react';
-import Image from 'next/image';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
 interface Event {
   _id: string;
   title: string;
-  date: string;
+  fromDate?: string;
+  toDate?: string;
+  date?: string;
   location: string;
   mainImageBase64: string;
   description?: string;
+}
+
+function eventDateLabel(e: Event): string {
+  const from = e.fromDate || e.date;
+  const to = e.toDate || e.date;
+  if (!from) return '—';
+  const fromStr = format(new Date(from), 'PPP');
+  if (!to || +new Date(to) === +new Date(from)) return fromStr;
+  return `${fromStr} – ${format(new Date(to), 'PPP')}`;
 }
 
 export default function ManageUpcomingEventsPage() {
@@ -94,18 +104,22 @@ export default function ManageUpcomingEventsPage() {
 
   return (
     <>
-      <h1 className="text-4xl md:text-5xl font-extrabold text-admin-text-primary text-center mb-12">
+      <h1 className="text-4xl md:text-5xl font-extrabold text-admin-text-primary text-center mb-4">
         Manage Upcoming Events
       </h1>
       <p className="text-lg text-center text-admin-text-secondary mb-8">
         View and manage all upcoming event entries.
       </p>
+      <div className="flex justify-end mb-6">
+        <Link href="/admin/events/upcoming/add">
+          <Button className="bg-admin-accent text-white font-bold rounded-xl px-6">+ Add Event</Button>
+        </Link>
+      </div>
 
       <div className="bg-admin-card-bg border border-admin-border rounded-xl shadow-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-admin-sidebar-bg hover:bg-admin-sidebar-bg">
-              <TableHead className="text-admin-text-primary">Image</TableHead>
               <TableHead className="text-admin-text-primary">Title</TableHead>
               <TableHead className="text-admin-text-primary">Date</TableHead>
               <TableHead className="text-admin-text-primary">Location</TableHead>
@@ -115,25 +129,15 @@ export default function ManageUpcomingEventsPage() {
           <TableBody>
             {events.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-admin-text-secondary py-8">
+                <TableCell colSpan={4} className="text-center text-admin-text-secondary py-8">
                   No upcoming events found.
                 </TableCell>
               </TableRow>
             ) : (
               events.map((event) => (
                 <TableRow key={event._id} className="border-admin-border/50 hover:bg-admin-hover-bg">
-                  <TableCell>
-                    <Image
-                      src={event.mainImageBase64}
-                      alt={event.title}
-                      width={64}
-                      height={40}
-                      objectFit="cover"
-                      className="rounded-md"
-                    />
-                  </TableCell>
                   <TableCell className="font-medium text-admin-text-primary">{event.title}</TableCell>
-                  <TableCell className="text-admin-text-primary">{format(new Date(event.date), 'PPP')}</TableCell>
+                  <TableCell className="text-admin-text-primary">{eventDateLabel(event)}</TableCell>
                   <TableCell className="text-admin-text-primary">{event.location}</TableCell>
                   <TableCell className="text-right">
                     <Link href={`/admin/events/upcoming/${event._id}/edit`} passHref>

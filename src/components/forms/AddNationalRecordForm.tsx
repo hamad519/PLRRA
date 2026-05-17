@@ -151,10 +151,10 @@ export const AddNationalRecordForm = () => {
               )}
             />
 
-            <Button 
-              type="submit" 
-              disabled={isLoading} 
-              className="w-full py-8 rounded-2xl bg-admin-accent text-white text-lg font-black uppercase tracking-widest shadow-xl transition-all hover:scale-[1.01]"
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="mx-auto flex h-10 px-6 rounded-lg bg-admin-accent hover:bg-admin-accent/90 text-white text-sm font-semibold shadow-sm transition-colors items-center justify-center"
             >
               {isLoading ? "Saving..." : "Save National Record"}
             </Button>

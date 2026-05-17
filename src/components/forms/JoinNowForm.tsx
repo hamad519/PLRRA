@@ -705,18 +705,18 @@ export const JoinNowForm = () => {
             </Reveal>
 
             <Reveal direction="up" delay={0.6}>
-              <Button 
-                type="submit" 
-                className="w-full py-10 rounded-[2rem] bg-plra-black hover:bg-plra-black/90 text-white text-xl font-black uppercase tracking-widest shadow-2xl transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50" 
+              <Button
+                type="submit"
+                className="mx-auto flex h-11 px-8 rounded-lg bg-plra-black hover:bg-plra-black/90 text-white text-sm font-semibold shadow-md transition-colors disabled:opacity-50 items-center gap-2"
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Processing Application...
-                  </div>
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </>
                 ) : (
-                  "Submit Membership Application"
+                  "Submit Application"
                 )}
               </Button>
             </Reveal>

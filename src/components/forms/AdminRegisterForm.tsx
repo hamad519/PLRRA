@@ -167,16 +167,16 @@ export const AdminRegisterForm = () => {
                 />
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isLoading}
-                className="w-full py-8 rounded-2xl bg-slate-950 hover:bg-plra-gold hover:text-slate-950 text-white text-lg font-black uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 group"
+                className="mx-auto flex h-11 px-8 rounded-lg bg-slate-950 hover:bg-plra-gold hover:text-slate-950 text-white text-sm font-semibold shadow-sm transition-colors items-center gap-2 group"
               >
                 {isLoading ? (
-                  <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    Register User <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+                    Register User <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
                   </>
                 )}
               </Button>
