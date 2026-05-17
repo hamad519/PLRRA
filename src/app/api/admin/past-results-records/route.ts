@@ -3,17 +3,15 @@ import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
-    const { title, date, location, matches } = await req.json();
+    const { title, matches } = await req.json();
 
-    if (!title || !date || !location || !matches || matches.length === 0) {
-      return NextResponse.json({ message: 'Title, date, location, and at least one match result are required' }, { status: 400 });
+    if (!title || !matches || matches.length === 0) {
+      return NextResponse.json({ message: 'Title and at least one match result are required' }, { status: 400 });
     }
 
     const record = await prisma.pastResultRecord.create({
       data: {
         title,
-        date: new Date(date),
-        location,
         matches,
       },
     });
@@ -26,7 +24,7 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const records = await prisma.pastResultRecord.findMany({ orderBy: { date: 'desc' } });
+    const records = await prisma.pastResultRecord.findMany({ orderBy: { createdAt: 'desc' } });
     const data = records.map((r: any) => ({ ...r, _id: r.id }));
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: any) {

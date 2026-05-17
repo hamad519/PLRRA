@@ -4,9 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, MapPin, FileText, Trophy, Download } from 'lucide-react';
+import { FileText, Trophy, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
 import { Reveal } from '@/components/animations/Reveal';
 import { downloadFile } from '@/lib/downloadFile';
 
@@ -19,8 +18,6 @@ interface MatchResult {
 interface PastResultRecord {
   _id: string;
   title: string;
-  date: string;
-  location: string;
   matches: MatchResult[];
 }
 
@@ -77,19 +74,7 @@ export const PastResultsRecordsContentSection = () => {
                 <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 rounded-[2.5rem] overflow-hidden">
                   <CardHeader className="p-10 bg-plra-bg-soft/50 border-b border-gray-100">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                      <div>
-                        <CardTitle className="text-3xl font-black text-plra-black mb-4">{competition.title}</CardTitle>
-                        <div className="flex flex-wrap gap-6">
-                          <div className="flex items-center text-gray-500 font-bold text-sm">
-                            <CalendarDays size={18} className="mr-2 text-plra-accent-purple" />
-                            <span>{format(new Date(competition.date), 'PPP')}</span>
-                          </div>
-                          <div className="flex items-center text-gray-500 font-bold text-sm">
-                            <MapPin size={18} className="mr-2 text-plra-accent-pink" />
-                            <span>{competition.location}</span>
-                          </div>
-                        </div>
-                      </div>
+                      <CardTitle className="text-3xl font-black text-plra-black">{competition.title}</CardTitle>
                       <div className="hidden md:block">
                         <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-plra-gold">
                           <Trophy size={32} />

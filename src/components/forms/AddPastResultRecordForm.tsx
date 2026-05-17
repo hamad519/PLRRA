@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Form,
   FormControl,
@@ -15,13 +14,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { CalendarIcon, Upload, PlusCircle, XCircle, FileText, CheckCircle2 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { Upload, PlusCircle, XCircle, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { uploadFile } from '@/lib/uploadFile';
 
@@ -48,10 +43,6 @@ const matchResultSchema = z.object({
 
 const formSchema = z.object({
   title: z.string().min(3, { message: "Competition title must be at least 3 characters." }),
-  date: z.date({
-    required_error: "Competition date is required.",
-  }),
-  location: z.string().min(3, { message: "Location must be at least 3 characters." }),
   matches: z.array(matchResultSchema).min(1, "At least one match result is required."),
 });
 
@@ -64,7 +55,6 @@ export const AddPastResultRecordForm = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
-      location: "",
       matches: [{ name: "", details: "" }],
     },
   });
@@ -141,43 +131,6 @@ export const AddPastResultRecordForm = () => {
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel className="font-bold">Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button variant="outline" className={cn("w-full justify-start text-left h-12 rounded-xl bg-admin-bg border-none", !field.value && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-bold">Location</FormLabel>
-                    <FormControl><Input placeholder="e.g., Jhelum" {...field} className="bg-admin-bg border-none h-12 rounded-xl" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-admin-accent">Match Results</h3>
               {fields.map((item, index) => (

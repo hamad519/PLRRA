@@ -17,11 +17,7 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { CalendarIcon, Upload, PlusCircle, XCircle, FileText } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { Upload, PlusCircle, XCircle, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { uploadFile } from '@/lib/uploadFile';
 
@@ -44,10 +40,6 @@ const matchResultSchema = z.object({
 
 const formSchema = z.object({
   title: z.string().min(3, { message: "Competition title must be at least 3 characters." }),
-  date: z.date({
-    required_error: "Competition date is required.",
-  }),
-  location: z.string().min(3, { message: "Location must be at least 3 characters." }),
   matches: z.array(matchResultSchema).min(1, "At least one match result is required."),
 });
 
@@ -90,8 +82,6 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
 
           form.reset({
             title: record.title,
-            date: new Date(record.date),
-            location: record.location,
             matches: initialMatches,
           });
         } else {
@@ -184,8 +174,6 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
 
       const payload = {
         title: values.title,
-        date: values.date.toISOString(),
-        location: values.location,
         matches: matchesWithBase64,
       };
 
@@ -244,59 +232,6 @@ export const EditPastResultRecordForm = ({ recordId }: EditPastResultRecordFormP
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className="text-admin-text-primary text-lg">Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal bg-admin-input-bg border-admin-input-border text-admin-text-primary hover:bg-admin-hover-bg hover:text-admin-text-primary",
-                            !field.value && "text-admin-text-secondary"
-                          )}
-                        >
-                          <span className="flex items-center">
-                            <CalendarIcon className="mr-2 h-4 w-4 text-admin-accent" />
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                          </span>
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-admin-card-bg border-admin-border" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        captionLayout="dropdown"
-                        fromYear={new Date().getFullYear() - 20}
-                        toYear={new Date().getFullYear() + 5}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-admin-text-primary text-lg">Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Army Marksmanship Unit, Jhelum" {...field} className="bg-admin-input-bg border-admin-input-border text-admin-text-primary focus:border-admin-accent placeholder:text-admin-text-secondary" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="space-y-4">
               <h3 className="text-2xl font-bold text-admin-accent border-b border-admin-border pb-2 mb-4">Match Results</h3>
               {fields.map((item, index) => {

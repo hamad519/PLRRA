@@ -24,18 +24,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!numericId) return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
 
   try {
-    const { title, date, location, matches } = await req.json();
+    const { title, matches } = await req.json();
 
-    if (!title || !date || !location || !matches || matches.length === 0) {
-      return NextResponse.json({ message: 'Title, date, location, and at least one match result are required' }, { status: 400 });
+    if (!title || !matches || matches.length === 0) {
+      return NextResponse.json({ message: 'Title and at least one match result are required' }, { status: 400 });
     }
 
     const record = await prisma.pastResultRecord.update({
       where: { id: numericId },
       data: {
         title,
-        date: new Date(date),
-        location,
         matches,
       },
     });
