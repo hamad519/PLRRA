@@ -190,11 +190,11 @@ Current Statistics:
     }
 
     if (fetchAll || intent.wantsPastResults) {
-      const pastResults = await prisma.pastResultRecord.findMany({ orderBy: { date: 'desc' }, take: 5 });
+      const pastResults = await prisma.pastResultRecord.findMany({ orderBy: { createdAt: 'desc' }, take: 5 });
       if (pastResults.length > 0) {
         context += `\n=== PAST COMPETITION RESULTS ===\n`;
         for (const result of pastResults) {
-          context += `\n[Competition] ${result.title} — ${new Date(result.date).toDateString()}, ${result.location}\n`;
+          context += `\n[Competition] ${result.title}\n`;
           const matches = (result.matches ?? []) as any[];
           for (const match of matches) {
             context += `  Match: ${match.name}\n`;

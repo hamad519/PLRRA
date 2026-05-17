@@ -11,8 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Trophy, Edit, Trash2, FileText } from 'lucide-react';
-import { format } from 'date-fns';
+import { Edit, Trash2, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 interface MatchResult {
@@ -24,8 +23,6 @@ interface MatchResult {
 interface PastResultRecord {
   _id: string;
   title: string;
-  date: string;
-  location: string;
   matches: MatchResult[];
 }
 
@@ -115,8 +112,6 @@ export default function ManagePastResultsRecordsPage() {
           <TableHeader>
             <TableRow className="bg-admin-sidebar-bg hover:bg-admin-sidebar-bg">
               <TableHead className="text-admin-text-primary">Title</TableHead>
-              <TableHead className="text-admin-text-primary">Date</TableHead>
-              <TableHead className="text-admin-text-primary">Location</TableHead>
               <TableHead className="text-admin-text-primary">Matches</TableHead>
               <TableHead className="text-admin-text-primary text-right">Actions</TableHead>
             </TableRow>
@@ -124,7 +119,7 @@ export default function ManagePastResultsRecordsPage() {
           <TableBody>
             {records.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-admin-text-secondary py-8">
+                <TableCell colSpan={3} className="text-center text-admin-text-secondary py-8">
                   No past results or records found.
                 </TableCell>
               </TableRow>
@@ -132,8 +127,6 @@ export default function ManagePastResultsRecordsPage() {
               records.map((record) => (
                 <TableRow key={record._id} className="border-admin-border/50 hover:bg-admin-hover-bg">
                   <TableCell className="font-medium text-admin-text-primary">{record.title}</TableCell>
-                  <TableCell className="text-admin-text-primary">{format(new Date(record.date), 'PPP')}</TableCell>
-                  <TableCell className="text-admin-text-primary">{record.location}</TableCell>
                   <TableCell className="text-admin-text-primary">
                     <ul className="list-disc pl-4">
                       {record.matches.map((match, index) => (

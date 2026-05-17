@@ -101,15 +101,15 @@ model NationalRecord {
 
 // -------------------------- PAST RESULT RECORD --------------------------
 model PastResultRecord {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   title     String
-  date      DateTime
-  location  String
+  date      DateTime?
+  location  String?
   matches   Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  @@index([date])
+  @@index([createdAt])
   @@map("past_result_records")
 }
 
