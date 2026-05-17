@@ -23,18 +23,20 @@ model User {
 
 // -------------------------- EVENT --------------------------
 model Event {
-  id              Int      @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   title           String
-  date            DateTime
+  fromDate        DateTime
+  toDate          DateTime
+  date            DateTime?
   location        String
-  mainImageBase64 String   @db.LongText
-  description     String   @default("") @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  mainImageBase64 String?   @db.LongText
+  description     String    @default("") @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   registrations EventRegistration[]
 
-  @@index([date])
+  @@index([fromDate])
   @@map("events")
 }
 
@@ -109,6 +111,23 @@ model PastResultRecord {
 
   @@index([date])
   @@map("past_result_records")
+}
+
+// -------------------------- BLOG / NEWS ARTICLE --------------------------
+model Blog {
+  id               Int      @id @default(autoincrement())
+  title            String
+  slug             String   @unique
+  date             DateTime @default(now())
+  imageBase64      String   @db.LongText
+  shortDescription String   @db.Text
+  content          String   @db.LongText
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isActive, date])
+  @@map("blogs")
 }
 
 // -------------------------- LATEST NEWS --------------------------
@@ -269,6 +288,7 @@ model SiteSettings {
   heroSlides        Json?
   aims              Json? // Array<{ title: string; description: string; iconName?: string }>
   accountDetails    Json? // { bankName, accountTitle, accountNumber, iban, branchCode }
+  constitutionPdfBase64 String? @db.LongText
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

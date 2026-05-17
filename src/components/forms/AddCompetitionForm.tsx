@@ -389,8 +389,8 @@ export const AddCompetitionForm = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit" variant="default" className="w-full py-3 text-lg font-semibold shadow-lg hover:scale-[1.01] transition-transform duration-300 bg-admin-accent text-white hover:bg-admin-accent/90" disabled={isLoading}>
-              {isLoading ? 'Uploading & saving...' : 'Add Competition'}
+            <Button type="submit" variant="default" className="mx-auto flex h-10 px-6 rounded-lg text-sm font-semibold shadow-sm transition-colors bg-admin-accent text-white hover:bg-admin-accent/90 items-center justify-center" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Add Competition'}
             </Button>
           </form>
         </Form>

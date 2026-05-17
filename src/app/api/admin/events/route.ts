@@ -3,18 +3,19 @@ import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
-    const { title, date, location, description, mainImageBase64 } = await req.json();
+    const { title, fromDate, toDate, location, description, mainImageBase64 } = await req.json();
 
-    if (!title || !date || !location || !mainImageBase64) {
-      return NextResponse.json({ message: 'Title, date, location, and main image are required' }, { status: 400 });
+    if (!title || !fromDate || !toDate || !location) {
+      return NextResponse.json({ message: 'Title, from date, to date, and location are required' }, { status: 400 });
     }
 
     const event = await prisma.event.create({
       data: {
         title,
-        date: new Date(date),
+        fromDate: new Date(fromDate),
+        toDate: new Date(toDate),
         location,
-        mainImageBase64,
+        mainImageBase64: mainImageBase64 || null,
         description: description || '',
       },
     });
@@ -27,8 +28,9 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const events = await prisma.event.findMany({ orderBy: { date: 'desc' } });
-    return NextResponse.json({ success: true, data: events }, { status: 200 });
+    const events = await prisma.event.findMany({ orderBy: { fromDate: 'desc' } });
+    const data = events.map((e: any) => ({ ...e, _id: e.id }));
+    return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: 'Failed to fetch events', error: error.message }, { status: 500 });
   }

@@ -12,10 +12,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface Event {
   _id: string;
   title: string;
-  date: string;
+  fromDate?: string;
+  toDate?: string;
+  date?: string;
   location: string;
   mainImageBase64: string;
   description?: string;
+}
+
+function formatEventDate(event: Event): string {
+  const from = event.fromDate || event.date;
+  const to = event.toDate || event.date;
+  if (!from) return '';
+  const fromStr = new Date(from).toLocaleDateString();
+  if (!to || to === from) return fromStr;
+  return `${fromStr} – ${new Date(to).toLocaleDateString()}`;
 }
 
 export const UpcomingEventsContentSection = () => {
@@ -80,7 +91,7 @@ export const UpcomingEventsContentSection = () => {
                       <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-4 text-plra-accent-purple">
                         <CalendarDays size={24} />
                       </div>
-                      <span className="text-lg">{new Date(event.date).toLocaleDateString()}</span>
+                      <span className="text-lg">{formatEventDate(event)}</span>
                     </div>
                     <div className="flex items-center text-gray-600 font-bold">
                       <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-4 text-plra-accent-pink">

@@ -159,14 +159,14 @@ export default function AdminLoginPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-14 rounded-xl bg-gradient-to-r from-plra-accent-purple to-plra-accent-pink hover:opacity-90 text-white font-black text-sm uppercase tracking-widest transition-all shadow-[0_10px_30px_rgba(139,92,246,0.3)] hover:shadow-[0_15px_40px_rgba(139,92,246,0.4)] group"
+                  className="w-full h-11 rounded-lg bg-gradient-to-r from-plra-accent-purple to-plra-accent-pink hover:opacity-90 text-white font-semibold text-sm tracking-wide transition-all shadow-md hover:shadow-lg group"
                 >
                   {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
                       Sign In
-                      <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight size={16} className="ml-2 group-hover:translate-x-0.5 transition-transform" />
                     </>
                   )}
                 </Button>

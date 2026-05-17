@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
 import { DocumentViewerModal } from '@/components/admin/DocumentViewerModal';
 import { downloadFile } from '@/lib/downloadFile';
+import Link from 'next/link';
 
 interface PressRelease {
   _id: string;
@@ -66,7 +67,12 @@ export default function ManagePressReleasesPage() {
 
   return (
     <div className="space-y-10">
-      <h1 className="text-4xl font-black text-admin-text-primary">Manage <span className="text-admin-accent">Press Releases</span></h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-4xl font-black text-admin-text-primary">Manage <span className="text-admin-accent">Press Releases</span></h1>
+        <Link href="/admin/press-releases/add">
+          <Button className="bg-admin-accent text-white font-bold rounded-xl px-6">+ Add Press Release</Button>
+        </Link>
+      </div>
       <div className="bg-admin-card-bg border border-admin-border rounded-xl shadow-xl overflow-hidden">
         <Table>
           <TableHeader>

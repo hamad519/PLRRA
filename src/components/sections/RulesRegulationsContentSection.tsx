@@ -1,41 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { FileText, ShieldCheck, Target, RefreshCcw, AlertTriangle, Settings, CheckCircle, Eye, Bolt, ClipboardList, Download, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { ShieldCheck, Target, RefreshCcw, AlertTriangle, Settings, CheckCircle, Eye, Bolt, ClipboardList } from 'lucide-react';
 import { Reveal } from '@/components/animations/Reveal';
 
 export const RulesRegulationsContentSection = () => {
   return (
     <section className="bg-white py-24 px-4 md:px-8">
       <div className="container mx-auto max-w-6xl space-y-20">
-        
-        {/* Competition Rules / Rulebook Download */}
-        <Reveal direction="up">
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-plra-gold to-orange-500 rounded-[3rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-            <Card className="relative bg-slate-950 border-none text-white shadow-2xl rounded-[2.5rem] overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-plra-gold/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-              <CardContent className="p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
-                <div className="space-y-6 text-center md:text-left">
-                  <div className="w-16 h-16 rounded-2xl bg-plra-gold flex items-center justify-center text-slate-950 mx-auto md:mx-0 shadow-lg">
-                    <FileText size={32} />
-                  </div>
-                  <h2 className="text-3xl md:text-5xl font-black tracking-tight">Official <span className="text-plra-gold">Rulebook</span></h2>
-                  <p className="text-gray-400 text-lg max-w-xl leading-relaxed">
-                    For detailed competition guidelines, scoring systems, and technical specifications, please download the official NLRSA rulebook.
-                  </p>
-                </div>
-                <Link href="/rules/NLRSA_Rulebook.pdf" target="_blank" rel="noopener noreferrer" passHref>
-                  <Button className="bg-white text-slate-950 hover:bg-plra-gold hover:text-slate-950 transition-all duration-500 font-black px-10 py-8 rounded-2xl text-sm uppercase tracking-widest shadow-2xl flex items-center gap-3 group/btn">
-                    <Download size={20} /> Download PDF <ArrowRight className="group-hover/btn:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        </Reveal>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Safety Guidelines */}

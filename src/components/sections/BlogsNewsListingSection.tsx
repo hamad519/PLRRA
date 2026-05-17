@@ -2,11 +2,44 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarDays, ArrowRight } from 'lucide-react';
-import { blogs } from '@/lib/blog-data';
+import { CalendarDays, ArrowRight, Inbox } from 'lucide-react';
 import { Reveal } from '@/components/animations/Reveal';
+import { format } from 'date-fns';
 
-export const BlogsNewsListingSection = () => {
+interface BlogListItem {
+  id: string;
+  slug: string;
+  title: string;
+  date: string;
+  imageUrl: string;
+  shortDescription: string;
+}
+
+interface BlogsNewsListingSectionProps {
+  blogs: BlogListItem[];
+}
+
+export const BlogsNewsListingSection = ({ blogs }: BlogsNewsListingSectionProps) => {
+  if (!blogs || blogs.length === 0) {
+    return (
+      <section className="bg-white py-24 px-4 md:px-8">
+        <div className="container mx-auto max-w-2xl text-center">
+          <Reveal direction="up">
+            <div className="bg-plra-bg-soft rounded-[2.5rem] p-12 border border-gray-100">
+              <div className="w-16 h-16 rounded-2xl bg-plra-accent-purple/10 flex items-center justify-center text-plra-accent-purple mx-auto mb-6">
+                <Inbox size={32} />
+              </div>
+              <h3 className="text-2xl font-black text-plra-black mb-3">No Articles Yet</h3>
+              <p className="text-gray-500 leading-relaxed">
+                Check back soon for the latest announcements, event highlights, and insights from the PLRA.
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="bg-white py-24 px-4 md:px-8">
       <div className="container mx-auto">
@@ -19,15 +52,15 @@ export const BlogsNewsListingSection = () => {
                     <Image
                       src={blog.imageUrl}
                       alt={blog.title}
-                      layout="fill"
-                      objectFit="cover"
-                      className="transition-transform duration-700 group-hover:scale-110"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-plra-black/80 via-plra-black/20 to-transparent"></div>
                     <div className="absolute bottom-6 left-6">
                       <div className="flex items-center text-white/80 text-[10px] font-black uppercase tracking-widest bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
                         <CalendarDays size={12} className="mr-2 text-plra-gold" />
-                        {blog.date}
+                        {format(new Date(blog.date), 'PPP')}
                       </div>
                     </div>
                   </div>

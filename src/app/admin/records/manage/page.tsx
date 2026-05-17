@@ -8,6 +8,7 @@ import { Trophy, Trash2, Download, Calendar, Eye } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
 import { DocumentViewerModal } from '@/components/admin/DocumentViewerModal';
 import { downloadFile } from '@/lib/downloadFile';
+import Link from 'next/link';
 
 interface NationalRecord {
   _id: string;
@@ -65,7 +66,12 @@ export default function ManageNationalRecordsPage() {
 
   return (
     <div className="space-y-10">
-      <h1 className="text-4xl font-black text-admin-text-primary">Manage <span className="text-admin-accent">National Records</span></h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-4xl font-black text-admin-text-primary">Manage <span className="text-admin-accent">National Records</span></h1>
+        <Link href="/admin/records/add">
+          <Button className="bg-admin-accent text-white font-bold rounded-xl px-6">+ Add Record</Button>
+        </Link>
+      </div>
       <div className="bg-admin-card-bg border border-admin-border rounded-xl shadow-xl overflow-hidden">
         <Table className="w-full border-collapse">
           <TableHeader>

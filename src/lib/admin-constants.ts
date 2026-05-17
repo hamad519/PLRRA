@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout, Rss, MessageSquareQuote, Globe, Crown, Image as ImageIcon, History as HistoryIcon } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarDays, Trophy, FileText, UserPlus, Mail, ClipboardList, Settings, Newspaper, Award, Layout, Rss, MessageSquareQuote, Globe, Crown, Image as ImageIcon, History as HistoryIcon, BookOpen } from 'lucide-react';
 
 export const ADMIN_NAV_LINKS = [
   {
@@ -77,6 +77,15 @@ export const ADMIN_NAV_LINKS = [
     submenus: [
       { name: "Add New Release", href: "/admin/press-releases/add" },
       { name: "Manage Releases", href: "/admin/press-releases/manage" },
+    ]
+  },
+  {
+    name: "Blogs & News",
+    href: "/admin/blogs",
+    icon: BookOpen,
+    submenus: [
+      { name: "Add New Blog", href: "/admin/blogs/add" },
+      { name: "Manage Blogs", href: "/admin/blogs/manage" },
     ]
   },
   {

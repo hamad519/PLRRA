@@ -125,13 +125,13 @@ export const ContactForm = () => {
                 </FormItem>
               )}
             />
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isLoading}
-              className="w-full bg-plra-black hover:bg-plra-black/90 text-white font-black py-8 rounded-2xl text-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="mx-auto flex h-11 px-8 rounded-lg bg-plra-black hover:bg-plra-black/90 text-white text-sm font-semibold transition-colors items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Sending...' : 'Send Message'} 
-              <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+              {isLoading ? 'Sending...' : 'Send Message'}
+              <Send size={16} className="group-hover:translate-x-0.5 transition-transform" />
             </Button>
           </form>
         </Form>

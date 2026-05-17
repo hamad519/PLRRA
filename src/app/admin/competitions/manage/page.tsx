@@ -100,12 +100,17 @@ export default function ManageCompetitionsPage() {
 
   return (
     <>
-      <h1 className="text-4xl md:text-5xl font-extrabold text-admin-text-primary text-center mb-12">
+      <h1 className="text-4xl md:text-5xl font-extrabold text-admin-text-primary text-center mb-4">
         Manage Competitions
       </h1>
       <p className="text-lg text-center text-admin-text-secondary mb-8">
         View and manage all competition entries.
       </p>
+      <div className="flex justify-end mb-6">
+        <Link href="/admin/competitions/add">
+          <Button className="bg-admin-accent text-white font-bold rounded-xl px-6">+ Add Competition</Button>
+        </Link>
+      </div>
 
       <div className="bg-admin-card-bg border border-admin-border rounded-xl shadow-xl overflow-hidden">
         <Table>

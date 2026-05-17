@@ -19,6 +19,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 }
 
+function extractMediaUrls(media: unknown): string[] {
+  if (!Array.isArray(media)) return [];
+  return media
+    .map((m: any) => (m && typeof m === 'object' ? m.url : null))
+    .filter((u: any): u is string => typeof u === 'string');
+}
+
+function extractStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v: any): v is string => typeof v === 'string');
+}
+
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const numericId = parseId(id);
@@ -29,6 +41,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     if (!title || !fromDate || !toDate || !location || !mainImageBase64) {
       return NextResponse.json({ message: 'Title, from date, to date, location, and main image are required' }, { status: 400 });
+    }
+
+    const existing = await prisma.competition.findUnique({
+      where: { id: numericId },
+      select: { mainImageBase64: true, galleryImagesBase64: true, galleryMedia: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ success: false, message: 'Competition not found' }, { status: 404 });
     }
 
     const competition = await prisma.competition.update({
@@ -44,6 +64,23 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         galleryMedia: galleryMedia ?? [],
       },
     });
+
+    // Delete orphaned files (in old record but not in the new payload)
+    const newMediaUrls = new Set<string>([
+      ...extractStringArray(galleryImagesBase64),
+      ...extractMediaUrls(galleryMedia),
+    ]);
+
+    if (existing.mainImageBase64 && existing.mainImageBase64 !== mainImageBase64) {
+      await deleteUploadedFile(existing.mainImageBase64);
+    }
+
+    const oldUrls = [
+      ...extractStringArray(existing.galleryImagesBase64),
+      ...extractMediaUrls(existing.galleryMedia),
+    ];
+    const orphaned = oldUrls.filter((u) => !newMediaUrls.has(u));
+    if (orphaned.length) await deleteUploadedFiles(orphaned);
 
     return NextResponse.json({ message: 'Competition updated successfully', competitionId: competition.id, data: competition }, { status: 200 });
   } catch (error: any) {

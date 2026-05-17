@@ -138,12 +138,12 @@ export const AboutSection = () => {
             const color = AIM_COLORS[index % AIM_COLORS.length];
             return (
               <Reveal key={index} delay={index * 0.1} direction="up">
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 h-full group">
-                  <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg', color)}>
-                    <Icon size={28} />
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 h-full group">
+                  <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center text-white mb-4 shadow-md', color)}>
+                    <Icon size={20} />
                   </div>
-                  <h3 className="text-xl font-black text-plra-black mb-4">{aim.title}</h3>
-                  <p className="text-gray-500 leading-relaxed">{aim.description}</p>
+                  <h3 className="text-base font-bold text-plra-black mb-2">{aim.title}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed">{aim.description}</p>
                 </div>
               </Reveal>
             );

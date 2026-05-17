@@ -98,12 +98,17 @@ export default function ManagePastResultsRecordsPage() {
 
   return (
     <>
-      <h1 className="text-4xl md:text-5xl font-extrabold text-admin-text-primary text-center mb-12">
+      <h1 className="text-4xl md:text-5xl font-extrabold text-admin-text-primary text-center mb-4">
         Manage Past Results & Records
       </h1>
       <p className="text-lg text-center text-admin-text-secondary mb-8">
         View and manage all past competition results and national records.
       </p>
+      <div className="flex justify-end mb-6">
+        <Link href="/admin/events/past-results-records/add">
+          <Button className="bg-admin-accent text-white font-bold rounded-xl px-6">+ Add Record</Button>
+        </Link>
+      </div>
 
       <div className="bg-admin-card-bg border border-admin-border rounded-xl shadow-xl overflow-hidden">
         <Table>

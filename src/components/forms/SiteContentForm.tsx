@@ -10,10 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Save, Plus, Trash2, Image as ImageIcon, Trophy, Layout, Info, Upload, XCircle, Landmark } from 'lucide-react';
+import { Save, Plus, Trash2, Image as ImageIcon, Trophy, Layout, Info, Upload, XCircle, Landmark, FileText, ExternalLink } from 'lucide-react';
 import { Reveal } from '@/components/animations/Reveal';
 import Image from 'next/image';
 import { uploadImage } from '@/lib/uploadImage';
+import { uploadFile } from '@/lib/uploadFile';
 
 const contentSchema = z.object({
   plraIntro: z.string().min(10, "Introduction is too short"),
@@ -45,6 +46,7 @@ const contentSchema = z.object({
     description: z.string(),
     iconName: z.string().optional(),
   })),
+  constitutionPdfBase64: z.string().optional(),
 });
 
 const AIM_ICON_OPTIONS = ['Target', 'Users', 'Handshake', 'ShieldCheck', 'Trophy', 'Star', 'Flag', 'Globe', 'Award'];
@@ -67,6 +69,7 @@ export const SiteContentForm = () => {
       championMoments: [],
       heroSlides: [],
       aims: [],
+      constitutionPdfBase64: "",
     },
   });
 
@@ -98,6 +101,7 @@ export const SiteContentForm = () => {
             championMoments: data.data.championMoments || [],
             heroSlides: data.data.heroSlides || [],
             aims: data.data.aims || [],
+            constitutionPdfBase64: data.data.constitutionPdfBase64 || "",
           });
         }
       } catch (error) {
@@ -287,6 +291,87 @@ export const SiteContentForm = () => {
                   </div>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+        </Reveal>
+
+        {/* Section 1.6: Constitution PDF */}
+        <Reveal direction="up" delay={0.12}>
+          <Card className="bg-white border-none shadow-xl rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="p-8 bg-admin-bg/50 border-b border-admin-border">
+              <CardTitle className="text-xl font-black flex items-center gap-3">
+                <FileText className="text-admin-accent" /> Constitution PDF
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <FormField
+                control={form.control}
+                name="constitutionPdfBase64"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold">Constitution Document</FormLabel>
+                    <p className="text-sm text-admin-text-secondary mb-4">
+                      Upload a single PDF. Re-uploading replaces the existing file. Public visitors view it at <code className="px-2 py-0.5 rounded bg-admin-bg">/constitution</code>.
+                    </p>
+                    <div className="flex flex-col gap-4">
+                      {field.value && (
+                        <a
+                          href={field.value}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-4 rounded-xl bg-admin-bg border border-admin-border hover:bg-admin-hover-bg transition-colors"
+                        >
+                          <FileText className="h-5 w-5 text-admin-accent" />
+                          <span className="font-semibold text-admin-text-primary truncate flex-1">{field.value.split('/').pop()}</span>
+                          <ExternalLink className="h-4 w-4 text-admin-text-secondary" />
+                        </a>
+                      )}
+                      <label className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer bg-admin-bg border-admin-border hover:border-admin-accent transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Upload className="w-8 h-8 mb-3 text-admin-text-secondary" />
+                          <p className="mb-1 text-sm text-admin-text-secondary">
+                            <span className="font-semibold">{field.value ? 'Replace' : 'Click to upload'}</span> PDF
+                          </p>
+                          <p className="text-xs text-admin-text-secondary">PDF only (max 25MB)</p>
+                        </div>
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            if (file.type !== 'application/pdf') {
+                              toast.error('Only PDF files are allowed.');
+                              return;
+                            }
+                            try {
+                              const url = await uploadFile(file, 'constitution');
+                              field.onChange(url);
+                              toast.success('PDF uploaded. Click Update to save.');
+                            } catch (err: any) {
+                              toast.error(err.message || 'Upload failed');
+                            } finally {
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                      </label>
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => field.onChange("")}
+                          className="text-red-500 hover:bg-red-50 self-start"
+                        >
+                          <XCircle className="mr-2 h-4 w-4" /> Remove PDF
+                        </Button>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
         </Reveal>
@@ -505,8 +590,8 @@ export const SiteContentForm = () => {
           </Card>
         </Reveal>
 
-        <Button type="submit" disabled={isSaving} className="w-full py-10 rounded-[2rem] bg-admin-accent text-white text-xl font-black uppercase tracking-widest shadow-2xl transition-all hover:scale-[1.01]">
-          {isSaving ? "Saving Content..." : <><Save className="mr-3" /> Update Site Content</>}
+        <Button type="submit" disabled={isSaving} className="mx-auto flex h-10 px-6 rounded-lg bg-admin-accent hover:bg-admin-accent/90 text-white text-sm font-semibold shadow-sm transition-colors items-center gap-2">
+          {isSaving ? "Saving..." : <><Save className="h-4 w-4" /> Update Site Content</>}
         </Button>
       </form>
     </Form>

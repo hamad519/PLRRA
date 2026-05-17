@@ -14,11 +14,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { downloadFile } from '@/lib/downloadFile';
 import { cn } from '@/lib/utils';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export const Header = () => {
   const dispatch = useDispatch();
   const isMobileMenuOpen = useSelector((state: RootState) => state.navigation.isMobileMenuOpen);
   const isMobile = useIsMobile();
+  const { settings } = useSiteSettings();
+  const constitutionPdfUrl = settings?.constitutionPdfBase64 || '';
   const [dynamicLinks, setDynamicLinks] = useState<{ records: any[], pressReleases: any[] }>({ records: [], pressReleases: [] });
   const [isScrolled, setIsScrolled] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
@@ -110,6 +113,16 @@ export const Header = () => {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+      ) : link.name === "Constitution" && constitutionPdfUrl ? (
+        <a
+          key={link.name}
+          href={constitutionPdfUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 text-[11px] font-black uppercase tracking-[0.15em] text-gray-400 hover:text-white transition-all rounded-lg hover:bg-white/5"
+        >
+          {link.name}
+        </a>
       ) : (
         <Link key={link.name} href={link.href} className="px-4 py-2 text-[11px] font-black uppercase tracking-[0.15em] text-gray-400 hover:text-white transition-all rounded-lg hover:bg-white/5">
           {link.name}
@@ -136,6 +149,7 @@ export const Header = () => {
           <div className="ml-3 hidden lg:block">
             <p className="text-[10px] font-black tracking-[0.3em] text-plra-gold leading-none mb-1">PAKISTAN</p>
             <p className="text-sm font-black tracking-tight text-white leading-none">LONG RANGE RIFLE</p>
+            <p className="text-[10px] font-black tracking-[0.3em] text-plra-gold leading-none mt-1">ASSOCIATION</p>
           </div>
         </Link>
 
@@ -190,11 +204,22 @@ export const Header = () => {
                     ))}
                   </div>
                 </div>
+              ) : link.name === "Constitution" && constitutionPdfUrl ? (
+                <a
+                  key={link.name}
+                  href={constitutionPdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xl font-black uppercase tracking-widest text-white hover:text-plra-accent-purple py-3 transition-colors"
+                  onClick={() => dispatch(setMobileMenuOpen(false))}
+                >
+                  {link.name}
+                </a>
               ) : (
-                <Link 
-                  key={link.name} 
-                  href={link.href} 
-                  className="text-xl font-black uppercase tracking-widest text-white hover:text-plra-accent-purple py-3 transition-colors" 
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="text-xl font-black uppercase tracking-widest text-white hover:text-plra-accent-purple py-3 transition-colors"
                   onClick={() => dispatch(setMobileMenuOpen(false))}
                 >
                   {link.name}

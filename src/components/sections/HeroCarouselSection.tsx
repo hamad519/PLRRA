@@ -61,12 +61,12 @@ export const HeroCarouselSection = () => {
                 src={slide.imageBase64}
                 alt="Hero Slide"
                 fill
-                className="object-cover z-0 opacity-50"
+                className="object-cover z-0 opacity-50 pointer-events-none"
                 priority={index === 0}
                 quality={100}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent z-10">
-                <div className="container h-full flex flex-col justify-center px-8 md:px-16 mx-auto">
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent z-10 pointer-events-none">
+                <div className="container h-full flex flex-col justify-center px-8 md:px-16 mx-auto pointer-events-auto">
                   <div className="max-w-4xl">
                     <Reveal direction="down">
                       <div className="flex items-center gap-4 mb-6">
@@ -129,7 +129,7 @@ export const HeroCarouselSection = () => {
           </Button>
         </div>
       )}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-slate-950 to-transparent z-20"></div>
+      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-slate-950 to-transparent z-20 pointer-events-none"></div>
     </section>
   );
 };

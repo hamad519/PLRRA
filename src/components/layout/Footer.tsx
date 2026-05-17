@@ -20,6 +20,7 @@ export const Footer = () => {
               <div className="ml-4">
                 <p className="text-[10px] font-black tracking-[0.3em] text-plra-gold leading-none mb-1">PAKISTAN</p>
                 <p className="text-lg font-black tracking-tight text-white leading-none">LONG RANGE RIFLE</p>
+                <p className="text-[10px] font-black tracking-[0.3em] text-plra-gold leading-none mt-1">ASSOCIATION</p>
               </div>
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed mb-8 text-center md:text-left">
